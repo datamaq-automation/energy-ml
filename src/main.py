@@ -52,6 +52,15 @@ def create_app() -> FastAPI:
     async def energia() -> FileResponse:
         return FileResponse("web/energia.html")
 
+    @app.get("/guia", include_in_schema=False)
+    async def guia() -> FileResponse:
+        return FileResponse("web/guia.html")
+
+    # Solo se publica la guía, no toda la carpeta docs/.
+    @app.get("/guia/guia-docente.md", include_in_schema=False)
+    async def guia_markdown() -> FileResponse:
+        return FileResponse("docs/guia-docente.md", media_type="text/markdown; charset=utf-8")
+
     @app.get("/health", tags=["Health"])
     async def health_check() -> dict[str, str]:
         return {"status": "ok", "environment": settings.ENVIRONMENT}
