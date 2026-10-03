@@ -111,7 +111,7 @@ Para cada par de mediciones consecutivas se calcula el salto **|ΔP| = |P(t) −
 ### Paso 3 — Agrupar con DBSCAN (con radio automático)
 **DBSCAN** junta eventos de tamaño parecido: si hay cientos de saltos de ~90 kW, probablemente sean el mismo equipo. Dos parámetros:
 - **radio** (`eps`): qué tan parecidos deben ser dos saltos para estar en el mismo grupo. Automático, ver §7.
-- **mínimo de eventos** (`min_samples` = `NILM_MIN_EVENTOS` = 10): menos que eso no se considera una carga.
+- **mínimo de eventos** (`min_samples`): menos que eso no se considera una carga. También automático, ver §7.
 
 Los eventos que no se parecen a ningún grupo quedan **sin grupo** (etiqueta −1) en vez de forzarlos.
 
@@ -183,8 +183,8 @@ El radio (`eps`) era **8 kW fijo**, sin relación con la escala de cada medidor.
 
 | Caso | Ruido | Radio | Resultado |
 | :--- | :--- | :--- | :--- |
-| `planta_2_a`, mes | 5,4 kW | 10,8 kW | ~91 kW (429 ↑ / 391 ↓) + una carga dudosa de ~222 kW |
-| `planta_2_a`, semana | 5,0 kW | 9,9 kW | ~92 kW (134 ↑ / 126 ↓) |
+| `planta_2_a`, mes | 5,4 kW | 10,8 kW | ~91 kW (426 ↑ / 388 ↓) |
+| `planta_2_a`, semana | 5,0 kW | 9,9 kW | ~92 kW (135 ↑ / 126 ↓) |
 | `planta_2_b`, mes | 14,5 kW | 29,0 kW | ~75 kW (sin cambios: su problema es el umbral) |
 
 ### Cómo se llegó a esto (vale contarlo en clase)
@@ -198,15 +198,27 @@ El radio (`eps`) era **8 kW fijo**, sin relación con la escala de cada medidor.
 
 > Los tests encontraron el problema que los datos reales no mostraban. Un buen dato sintético es un experimento controlado.
 
+### El mínimo de eventos: uno por día
+
+DBSCAN también necesita saber **cuántos eventos** hacen falta para que un grupo sea una carga. Era **10 fijo**, pero 10 eventos no pesan igual en una semana (una carga frecuente) que en tres meses (algo que casi no pasa). Ahora es **uno por día analizado, en promedio, y nunca menos de 3**:
+
+| Rango | Mínimo | Efecto |
+| :--- | :--- | :--- |
+| Mes (21 días) | 21 | La "carga" de ~222 kW (20 eventos en 21 días) ya no pasa; la de ~91 kW sí |
+| Semana (7 días) | 7 | ~92 kW, igual que con 10 |
+| Un día | 3 | Se sigue detectando la carga de ~92 kW con pocos datos |
+
+Con esto, **los tres parámetros que se estiman de los datos** son el umbral, el radio y el mínimo. Los dos que quedan fijos (`NILM_SEPARACION_MINIMA` y `NILM_BALANCE_MINIMO`) no son parámetros a estimar sino **reglas de decisión**: cuánta confianza exigir y qué se considera un equipo ON/OFF. Por eso son explícitos y están documentados.
+
 ---
 
 ## 8. Hallazgos en los datos
 
 - **Carga ON/OFF de ~91 kW en `planta_2_a`**: unos 430 encendidos y 390 apagados en 21 días, **≈18 ciclos por día**. Estable al cambiar el rango. Es el hallazgo más sólido.
 - **Carga de ~88 kW en `planta_2_b`** con umbral de 60 kW; ~75 kW con el automático (dudoso, §6).
-- **"Carga" de ~222 kW con 2 encendidos y 18 apagados** en `planta_2_a`: un equipo real se enciende y apaga parecido. La regla `Carga.es_on_off` (`NILM_BALANCE_MINIMO = 0.5`: uno puede ser a lo sumo el doble del otro) la marca **dudosa**. Puede ser un arranque escalonado, una parada de planta o varios equipos apagándose juntos.
-- **Eventos sin grupo**: 11 en `planta_2_a`. DBSCAN prefiere no forzarlos.
-- **Más encendidos que apagados** en casi todas las cargas (429 contra 391). Una hipótesis para verificar: con una medición cada 5 minutos, un apagado puede quedar "repartido" en dos saltos chicos que no superan el umbral.
+- **"Carga" de ~222 kW con 2 encendidos y 18 apagados** en `planta_2_a`: con el mínimo automático (21) no llega a ser carga; aparece si lo fijás en 10 (`NILM_MIN_EVENTOS=10`). Un equipo real se enciende y apaga parecido: la regla `Carga.es_on_off` (`NILM_BALANCE_MINIMO = 0.5`: uno puede ser a lo sumo el doble del otro) la marca **dudosa**. Puede ser un arranque escalonado, una parada de planta o varios equipos apagándose juntos.
+- **Eventos sin grupo**: 37 en `planta_2_a` (incluye los de ~222 kW). DBSCAN prefiere no forzarlos.
+- **Más encendidos que apagados** en casi todas las cargas (426 contra 388). Una hipótesis para verificar: con una medición cada 5 minutos, un apagado puede quedar "repartido" en dos saltos chicos que no superan el umbral.
 
 ---
 
@@ -225,7 +237,7 @@ Muestra los 4 pasos con números grandes y una frase cada uno; el detalle está 
 | `umbral` | `{kw, automatico, separacion (η), confiable}` — paso 2 |
 | `histograma` | 30 barras `{desde_kw, hasta_kw, cantidad}` de \|ΔP\| (de 0 al percentil 99; la última junta el resto) |
 | `eventos`, `encendidos`, `apagados`, `eventos_sin_grupo` | Paso 3 |
-| `radio` | `{kw, automatico}` — paso 3 |
+| `agrupamiento` | `{radio_kw, radio_automatico, min_eventos, min_eventos_automatico}` — paso 3 |
 | `cargas` | Paso 4: `{potencia_tipica_kw, encendidos, apagados, ciclos, ciclos_por_dia, on_off}` |
 
 Un medidor inexistente responde **404** (y la API nunca lee archivos fuera de `data/input/`: pedir `../.env` también da 404).
@@ -239,7 +251,8 @@ Solo tres niveles, todos con el formato de uvicorn:
 ```
 INFO:     Umbral automático: 51.3 kW (Otsu, separación ruido/eventos η=0.87)
 INFO:     Radio automático: 10.76 kW (mayor entre Freedman–Diaconis y 2 × ruido de la señal, ruido = 5.4 kW)
-WARNING:  ~222.0 kW tiene 2 ↑ y 18 ↓: probablemente no es una sola carga ON/OFF
+INFO:     Mínimo automático: 21 eventos por carga (uno por día analizado, al menos 3)
+WARNING:  No hay un valle claro entre ruido y eventos (η=0.71 < 0.80): el umbral es poco confiable
 ERROR:    Medidores desconocidos: nada (disponibles: planta_2_a, planta_2_b)
 ```
 
@@ -263,7 +276,7 @@ NILM_UMBRAL_KW=60 ./run.sh train planta_2_b
 | `NILM_UMBRAL_KW` | automático (Otsu) | Umbral de \|ΔP\| para que un salto sea evento |
 | `NILM_SEPARACION_MINIMA` | 0.8 | η mínimo para confiar en el umbral automático |
 | `NILM_EPS_KW` | automático (F–D / 2 × ruido) | Radio de DBSCAN |
-| `NILM_MIN_EVENTOS` | 10 | Mínimo de eventos para que un grupo sea carga |
+| `NILM_MIN_EVENTOS` | automático (uno por día, al menos 3) | Mínimo de eventos para que un grupo sea carga |
 | `NILM_BALANCE_MINIMO` | 0.5 | Proporción encendidos/apagados para ser ON/OFF |
 | `MEDICIONES_CSV_DIR` | `data/input` | De dónde se leen los CSV |
 | `RESULTADOS_DIR` | `data/output` | Dónde escribe `./run.sh train` |
@@ -301,7 +314,7 @@ El proyecto usa **Clean Architecture**: el centro (las reglas de NILM) no conoce
 | Capa | Archivo | Qué tiene |
 | :--- | :--- | :--- |
 | Dominio | `src/domain/cargas/entities.py` | `Medicion`, `EventoCarga`, `Carga` (con `es_on_off`), `EstimacionUmbral`, `BarraHistograma` |
-| | `src/domain/cargas/services.py` | Funciones puras: `saltos_kw`, `detectar_eventos`, `estimar_umbral` (Otsu), `nivel_de_ruido`, `estimar_radio` (F–D), `histograma`, `resumir_cargas` |
+| | `src/domain/cargas/services.py` | Funciones puras: `saltos_kw`, `detectar_eventos`, `estimar_umbral` (Otsu), `nivel_de_ruido`, `estimar_radio` (F–D), `estimar_min_eventos`, `histograma`, `resumir_cargas` |
 | | `src/domain/cargas/repositories.py` | **Puertos** (interfaces): `MedicionRepository`, `AgrupadorEventos`, `CargaRepository`, `Bitacora` |
 | Aplicación | `src/application/cargas/use_cases/identificar_cargas.py` | Orquesta los 4 pasos, decide umbral/radio automáticos o fijos, registra en el log |
 | | `src/application/cargas/dtos/identificar_cargas.py` | Lo que entra y sale (Pydantic) |
@@ -373,6 +386,7 @@ El repo empezó como un clasificador de diabetes y se transformó **con commits 
 | `32f381d` | Histograma en la web | Mostrar el porqué, no solo el resultado |
 | `6e0a186` | Página en 4 pasos explicados | Comunicar resultados a no especialistas |
 | `9064cd8` | Radio automático (F–D / 2 × ruido) | Parámetros con sentido físico |
+| `8ff09b1` | Mínimo de eventos automático (uno por día) | Criterios que no dependen del largo del rango |
 
 ### Decisiones y alternativas descartadas
 
@@ -385,6 +399,7 @@ El repo empezó como un clasificador de diabetes y se transformó **con commits 
 | Lógica en `run.sh` | `run.sh` solo lanza | La lógica en Python se testea |
 | Umbral mediana + k·MAD | Otsu | Ningún *k* servía para los dos tableros |
 | Radio por codo de *k*-distancias | Freedman–Diaconis + 2 × ruido | El codo da radios diminutos en una dimensión |
+| Automatizar todo, incluida la confianza mínima | Estimar umbral, radio y mínimo; dejar fijas las reglas de decisión | Cuánta confianza exigir no se deduce de los datos: es una decisión explícita |
 
 ---
 
@@ -404,9 +419,9 @@ Ordenados de menor a mayor dificultad. Los resultados esperados se verificaron c
 *Esperado*: sí, ~92 kW y ≈18/día (umbral 50,8 kW, η = 0,89). Una carga real es estable.
 
 **5. El radio importa.** `NILM_EPS_KW=8 ./run.sh train planta_2_a` y comparalo con el automático (10,8 kW). ¿Cuántos eventos quedan sin grupo en cada caso? ¿Cambia la carga principal?
-*Esperado*: con 8 kW quedan 20 sin grupo y con el automático 11; la carga principal casi no cambia (~91 kW). La carga dudosa pasa de ~227 a ~222 kW.
+*Esperado*: con 8 kW quedan 44 sin grupo y con el automático 37; la carga principal casi no cambia (~90,5 contra ~90,8 kW). El radio afina, pero no decide el resultado.
 
-**6. La carga sospechosa.** ¿Por qué ~222 kW tiene 2 encendidos y 18 apagados? Proponé dos explicaciones físicas y cómo verificarlas mirando los CSV (pista: buscá los instantes de esos saltos).
+**6. La carga sospechosa.** Corré `NILM_MIN_EVENTOS=10 ./run.sh train planta_2_a`: aparece una carga de ~222 kW con 2 encendidos y 18 apagados. ¿Por qué no aparece con el mínimo automático? ¿Por qué tiene tan pocos encendidos? Proponé dos explicaciones físicas y cómo verificarlas mirando los CSV (pista: buscá los instantes de esos saltos).
 
 **7. Leer el código.** En `services.py`, seguí `estimar_umbral` línea por línea. ¿Qué es `varianza_entre`? ¿Por qué se recorren los saltos ordenados?
 
