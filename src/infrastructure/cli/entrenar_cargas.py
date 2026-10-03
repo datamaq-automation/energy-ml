@@ -55,19 +55,8 @@ def _proporcion(texto: str) -> float:
     return valor
 
 
-def leer_argumentos() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Identifica cargas (NILM) en los CSV de data/input/."
-    )
-    parser.add_argument(
-        "medidores", nargs="*", help="nombres de CSV sin extensión (por defecto: todos)"
-    )
-    parser.add_argument(
-        "--desde", type=datetime.fromisoformat, default=TODO_EL_RANGO[0], help="ej. 2026-09-15"
-    )
-    parser.add_argument(
-        "--hasta", type=datetime.fromisoformat, default=TODO_EL_RANGO[1], help="ej. 2026-09-22"
-    )
+def agregar_parametros_nilm(parser: argparse.ArgumentParser) -> None:
+    """Opciones para fijar los parámetros NILM (las comparten train y evaluate)."""
     nilm = parser.add_argument_group(
         "parámetros NILM",
         "Sin estas opciones se usa config.py (umbral, radio y mínimo son automáticos). Criterios para elegirlos: docs/guia-docente.md, §6 y §7.",
@@ -99,6 +88,22 @@ def leer_argumentos() -> argparse.Namespace:
         metavar="P",
         help="proporción ciclos/mayor para ser ON/OFF (0 a 1)",
     )
+
+
+def leer_argumentos() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Identifica cargas (NILM) en los CSV de data/input/."
+    )
+    parser.add_argument(
+        "medidores", nargs="*", help="nombres de CSV sin extensión (por defecto: todos)"
+    )
+    parser.add_argument(
+        "--desde", type=datetime.fromisoformat, default=TODO_EL_RANGO[0], help="ej. 2026-09-15"
+    )
+    parser.add_argument(
+        "--hasta", type=datetime.fromisoformat, default=TODO_EL_RANGO[1], help="ej. 2026-09-22"
+    )
+    agregar_parametros_nilm(parser)
     return parser.parse_args()
 
 

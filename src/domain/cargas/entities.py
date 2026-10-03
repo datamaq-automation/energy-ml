@@ -82,3 +82,45 @@ class EventoReal:
     instante: datetime
     delta_kw: float
     carga_kw: float
+
+
+@dataclass(frozen=True)
+class EventoDetectado:
+    """Evento que encontró el algoritmo, con la carga a la que lo asignó (None si quedó sin grupo)."""
+
+    instante: datetime
+    delta_kw: float
+    carga_kw: float | None
+
+
+@dataclass(frozen=True)
+class ResultadoCarga:
+    """Qué tan bien se encontró una carga real."""
+
+    potencia_real_kw: float
+    eventos_reales: int
+    detectados: int
+    bien_asignados: int
+    potencia_estimada_kw: float | None
+
+    @property
+    def sensibilidad(self) -> float:
+        """De los eventos que ocurrieron, qué fracción se detectó y asignó a esta carga (recall)."""
+        return self.bien_asignados / self.eventos_reales if self.eventos_reales else 0.0
+
+
+@dataclass(frozen=True)
+class Evaluacion:
+    """Comparación entre lo que encontró el algoritmo y lo que realmente pasó."""
+
+    por_carga: list[ResultadoCarga]
+    eventos_detectados: int
+    falsos_positivos: int
+    cargas_inventadas: list[float]
+
+    @property
+    def precision(self) -> float:
+        """De los eventos detectados, qué fracción corresponde a un evento real."""
+        if not self.eventos_detectados:
+            return 0.0
+        return (self.eventos_detectados - self.falsos_positivos) / self.eventos_detectados
