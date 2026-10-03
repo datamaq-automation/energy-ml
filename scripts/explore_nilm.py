@@ -1,7 +1,7 @@
-"""scripts/explore_nilm.py — Corre IdentificarCargas contra la BD configurada en .env e imprime el resultado.
+"""scripts/explore_nilm.py — Corre IdentificarCargas sobre un CSV de data/input e imprime el resultado.
 
-Uso (con túnel `ssh -L 3306:127.0.0.1:3306 vps` y DATABASE_URL en .env):
-    .venv/bin/python scripts/explore_nilm.py "Trafo arriba" 2026-09-11 2026-10-03
+Uso (lee data/input/<medidor>.csv):
+    .venv/bin/python -m scripts.explore_nilm planta_2_a 2026-09-11 2026-10-03
 """
 
 import sys

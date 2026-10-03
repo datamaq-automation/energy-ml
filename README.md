@@ -6,11 +6,11 @@ Este repositorio empezó como un clasificador de diabetes (Flask + SVC + Supabas
 
 ## Cómo funciona
 
-1. **Datos:** potencia activa total cada 5 min de la base `datamaq_telemetry` (MySQL). Se guarda en W y el adaptador la convierte a kW.
+1. **Datos:** potencia activa total cada 5 min, en kW, en `data/input/<medidor>.csv` (columnas `instante,potencia_kw`). Son los dos tableros de la planta piloto, anonimizados como `planta_2_a` y `planta_2_b`.
 2. **Eventos:** cada salto |ΔP| ≥ `NILM_UMBRAL_KW` entre muestras consecutivas es un encendido (↑) o un apagado (↓).
 3. **Cargas:** DBSCAN agrupa los eventos por magnitud. Cada grupo es una carga candidata con su potencia típica.
 
-En la planta piloto (UPP, 11-09 a 03-10-2026), con los valores por defecto aparece una carga ON/OFF de **~92 kW** en *Trafo arriba* (412 encendidos y 380 apagados) y otra de **~88 kW** en *Trafo abajo*. El análisis completo está en el informe NILM.
+En la planta piloto (UPP, 11-09 a 03-10-2026), con los valores por defecto aparece una carga ON/OFF de **~92 kW** en *planta_2_a* (412 encendidos y 380 apagados) y otra de **~88 kW** en *planta_2_b*. El análisis completo está en el informe NILM.
 
 ## Arquitectura
 
@@ -19,7 +19,7 @@ Sigue la plantilla [`datamaq-automation/spec`](https://github.com/datamaq-automa
 ```
 src/domain/cargas/            Medicion, EventoCarga, Carga · detectar_eventos, resumir_cargas · puertos
 src/application/cargas/       IdentificarCargasUseCase + DTOs
-src/infrastructure/sqlalchemy SqlMedicionRepository (MySQL)
+src/infrastructure/csv        CsvMedicionRepository (data/input/*.csv)
 src/infrastructure/sklearn    DbscanAgrupador
 src/infrastructure/fastapi    GET /api/v1/identify-loads
 web/energia.html              Vista servida en /
@@ -29,11 +29,10 @@ scripts/explore_nilm.py       Ejecución por consola
 ## Uso
 
 ```bash
-cp .env.example .env              # completar DATABASE_URL
-ssh -L 3306:127.0.0.1:3306 vps    # túnel a la base (en otra terminal)
 ./run.sh dev                      # http://localhost:8000  ·  docs en /api/v1/docs
 ./run.sh test                     # pytest + Guantelete de Restricciones
-.venv/bin/python scripts/explore_nilm.py "Trafo arriba" 2026-09-11 2026-10-03
+.venv/bin/python -m scripts.explore_nilm planta_2_a 2026-09-11 2026-10-03
+.venv/bin/python -m scripts.entrenar_cargas   # resultados en data/output/
 ```
 
 ## Evolución (para seguir commit a commit)
@@ -50,6 +49,7 @@ ssh -L 3306:127.0.0.1:3306 vps    # túnel a la base (en otra terminal)
 | `feat(api)` | Endpoint REST | Thin controllers, inyección de dependencias |
 | `feat(scripts)` / `feat(web)` | Consola y vista web | Varios mecanismos de entrega |
 | `refactor: eliminar diabetes` | Se borra el sistema viejo | Strangler fig: reemplazo gradual |
+| `refactor: quitar MySQL` | La fuente pasa a ser CSV versionados; dominio y caso de uso no cambian | Reemplazar un adaptador sin tocar el núcleo |
 
 Para ver el código en un punto del historial: `git log --oneline` y `git checkout <hash>`.
 

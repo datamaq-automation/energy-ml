@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 
 from fastapi.testclient import TestClient
-from sqlalchemy.exc import OperationalError
 
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.domain.cargas.entities import EventoCarga, Medicion
@@ -50,25 +49,6 @@ def test_raiz_sirve_la_vista_de_energia() -> None:
     assert r.status_code == 200
     assert "Identificador de Cargas" in r.text
 
-
-class RepoCaido:
-    def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
-        raise OperationalError("SELECT 1", {}, Exception("Can't connect to MySQL server"))
-
-
-def test_identify_loads_responde_503_si_la_base_no_esta_disponible() -> None:
-    app.dependency_overrides[get_identificar_cargas] = lambda: IdentificarCargasUseCase(
-        RepoCaido(), AgrupadorUnico(), umbral_kw=60, logger=logger
-    )
-    try:
-        r = TestClient(app).get(
-            "/api/v1/identify-loads",
-            params={"medidor": "Trafo arriba", "desde": "2026-09-20T00:00", "hasta": "2026-09-21T00:00"},
-        )
-        assert r.status_code == 503
-        assert r.json() == {"detail": "Base de datos no disponible"}
-    finally:
-        app.dependency_overrides.clear()
 
 
 def test_static_sirve_css_y_js() -> None:
