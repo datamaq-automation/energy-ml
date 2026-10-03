@@ -124,3 +124,48 @@ class Evaluacion:
         if not self.eventos_detectados:
             return 0.0
         return (self.eventos_detectados - self.falsos_positivos) / self.eventos_detectados
+
+
+@dataclass(frozen=True)
+class Salto:
+    """Cambio de potencia entre dos mediciones, con el anterior y el siguiente como contexto.
+
+    Es un ejemplo para el clasificador supervisado: el contexto ayuda a distinguir un encendido
+    (un escalón aislado) de la base que sube de a poco o de un pico de ruido que va y vuelve.
+    """
+
+    instante: datetime
+    delta_kw: float
+    delta_previo_kw: float
+    delta_siguiente_kw: float
+
+    @property
+    def rasgos(self) -> list[float]:
+        return [self.delta_kw, self.delta_previo_kw, self.delta_siguiente_kw]
+
+
+@dataclass(frozen=True)
+class MatrizConfusion:
+    """Cuántos ejemplos de cada clase real se predijeron como cada clase: celdas[real][predicha]."""
+
+    clases: list[str]
+    celdas: dict[str, dict[str, int]]
+
+    @property
+    def total(self) -> int:
+        return sum(sum(fila.values()) for fila in self.celdas.values())
+
+    @property
+    def exactitud(self) -> float:
+        """Fracción de ejemplos bien clasificados (accuracy)."""
+        return sum(self.celdas[c][c] for c in self.clases) / self.total if self.total else 0.0
+
+    def sensibilidad(self, clase: str) -> float:
+        """De los ejemplos que eran de esta clase, qué fracción se predijo bien (recall)."""
+        reales = sum(self.celdas[clase].values())
+        return self.celdas[clase][clase] / reales if reales else 0.0
+
+    def precision(self, clase: str) -> float:
+        """De los ejemplos predichos como esta clase, qué fracción lo era de verdad."""
+        predichos = sum(self.celdas[c][clase] for c in self.clases)
+        return self.celdas[clase][clase] / predichos if predichos else 0.0

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Protocol
 
-from src.domain.cargas.entities import Carga, EventoCarga, EventoReal, Medicion
+from src.domain.cargas.entities import Carga, EventoCarga, EventoReal, Medicion, Salto
 
 
 class MedicionRepository(Protocol):
@@ -40,3 +40,15 @@ class VerdadRepository(Protocol):
     def guardar(self, medidor: str, eventos: list[EventoReal]) -> None: ...
 
     def listar(self, medidor: str) -> list[EventoReal]: ...
+
+
+class ClasificadorSaltos(Protocol):
+    """Aprende de saltos etiquetados qué carga produjo cada uno, y lo predice en saltos nuevos."""
+
+    def entrenar(self, saltos: list[Salto], etiquetas: list[str]) -> None: ...
+
+    def predecir(self, saltos: list[Salto]) -> list[str]: ...
+
+    def explicar(self) -> str:
+        """Lo que aprendió el modelo, en texto legible."""
+        ...
