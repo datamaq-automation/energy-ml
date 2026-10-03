@@ -58,6 +58,11 @@ case "$COMMAND" in
         echo "📏 Comparando lo identificado con la verdad conocida..."
         exec "$PYTHON_BIN" -m src.infrastructure.cli.evaluar_cargas "${@:2}"
         ;;
+    supervise)
+        ensure_venv
+        echo "🎓 Entrenando un clasificador con la verdad de un medidor simulado..."
+        exec "$PYTHON_BIN" -m src.infrastructure.cli.supervisar_cargas "${@:2}"
+        ;;
     test)
         ensure_venv
         echo "🧪 Ejecutando suite de pruebas con pytest..."
@@ -106,6 +111,7 @@ case "$COMMAND" in
         echo "              Opcional: medidores y --desde/--hasta (ej. ./run.sh train planta_2_a --desde 2026-09-15)"
         echo "  simulate  : Genera data/input/sintetico.csv y su verdad en data/verdad/ (cargas conocidas)"
         echo "  evaluate  : Compara lo identificado con la verdad de un medidor simulado (sensibilidad, precisión)"
+        echo "  supervise : Aprende las cargas de un medidor simulado con un árbol de decisión (supervisado)"
         echo "  test      : Ejecuta la suite de pruebas unitarias y de arquitectura con pytest"
         echo "  gauntlet  : Ejecuta las 11 reglas del Guantelete de Restricciones (test_architecture.py)"
         echo "  audit     : Ejecuta auditorías de código muerto y componentes Dios"
