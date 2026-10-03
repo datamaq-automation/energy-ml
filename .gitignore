@@ -26,3 +26,5 @@ htmlcov/
 .idea/
 *.swp
 *.swo
+# Scripts locales de extracción (no versionados)
+tmp/
