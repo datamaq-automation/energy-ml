@@ -1,4 +1,4 @@
-# EnergyAI-NILM (antes DiabetesAI-ML)
+# energy-ml (antes DiabetesAI-ML)
 
 Identificador de cargas energéticas por **NILM** (*Non-Intrusive Load Monitoring*): a partir del consumo total de un transformador, detecta qué equipos se encienden y se apagan, sin medidores por equipo.
 

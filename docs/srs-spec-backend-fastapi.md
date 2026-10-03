@@ -5,7 +5,7 @@
 > **Estado:** `borrador`  
 > **Fecha:** `2026-10-02`  
 > **Autor(es):** `agustin (docente) + alumnos`  
-> **Repositorio / Módulo:** `agustin/DiabetesAI-ML` (evolución didáctica hacia energía)  
+> **Repositorio / Módulo:** `datamaq-automation/energy-ml` (antes DiabetesAI-ML)  
 
 > 💡 **Acompañamiento Pedagógico:** Antes de completar esta plantilla, se recomienda consultar la [Guía de Andamiaje Pedagógico y Metacognición](../docs/guia-andamiaje-proyectos.md) para reflexionar sobre los problemas de negocio, casos de borde y evitar la sobreingeniería.
 

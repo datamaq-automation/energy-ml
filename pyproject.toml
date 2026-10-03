@@ -1,5 +1,5 @@
 [project]
-name = "energy-nilm-ml"
+name = "energy-ml"
 version = "1.0.0"
 description = "Identificador de cargas energéticas (NILM) — evolución didáctica de DiabetesAI-ML"
 readme = "README.md"
