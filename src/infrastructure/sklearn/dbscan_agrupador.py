@@ -16,7 +16,15 @@ class DbscanAgrupador:
         magnitudes = [[abs(e.delta_kw)] for e in eventos]  # sklearn espera una fila por muestra
         etiquetas = [int(e) for e in self._modelo.fit_predict(magnitudes)]
         grupos, ruido = len(set(etiquetas) - {-1}), etiquetas.count(-1)
-        logger.info("DBSCAN (eps=%s kW, min=%s): %d grupos", self._modelo.eps, self._modelo.min_samples, grupos)
+        logger.info(
+            "DBSCAN (eps=%s kW, min=%s): %d %s",
+            self._modelo.eps,
+            self._modelo.min_samples,
+            grupos,
+            "grupo" if grupos == 1 else "grupos",
+        )
         if ruido:
-            logger.warning("%d de %d eventos quedaron como ruido (sin grupo)", ruido, len(etiquetas))
+            logger.warning(
+                "%d de %d eventos quedaron como ruido (sin grupo)", ruido, len(etiquetas)
+            )
         return etiquetas

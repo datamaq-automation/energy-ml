@@ -47,3 +47,25 @@ def test_sin_datos_devuelve_vacio() -> None:
 def test_rango_invertido_es_invalido() -> None:
     with pytest.raises(ValidationError):
         IdentificarCargasRequest(medidor="X", desde=T0, hasta=T0)
+
+
+class BitacoraEnMemoria:
+    def __init__(self) -> None:
+        self.warnings: list[str] = []
+
+    def info(self, msg: str, *args: object) -> None: ...
+
+    def warning(self, msg: str, *args: object) -> None:
+        self.warnings.append(msg % args)
+
+    def error(self, msg: str, *args: object) -> None: ...
+
+
+def test_avisa_si_una_carga_no_es_on_off() -> None:
+    bitacora = BitacoraEnMemoria()
+    caso = IdentificarCargasUseCase(
+        RepoFalso([300, 210, 120, 210, 120]), AgrupadorPorSigno(), umbral_kw=60, logger=bitacora
+    )
+    res = caso.execute(IdentificarCargasRequest(medidor="X", desde=T0, hasta=T0 + timedelta(days=1)))
+    assert [(c.encendidos, c.apagados) for c in res.cargas] == [(1, 3)]
+    assert any("no es una sola carga ON/OFF" in w for w in bitacora.warnings)

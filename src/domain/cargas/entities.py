@@ -35,3 +35,8 @@ class Carga:
     @property
     def ciclos(self) -> int:
         return min(self.encendidos, self.apagados)
+
+    def es_on_off(self, balance_minimo: float) -> bool:
+        """Una carga ON/OFF real se enciende y se apaga una cantidad parecida de veces."""
+        mayor = max(self.encendidos, self.apagados)
+        return mayor > 0 and self.ciclos / mayor >= balance_minimo

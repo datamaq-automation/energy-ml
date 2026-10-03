@@ -9,16 +9,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.infrastructure.fastapi.routers.cargas import router as cargas_router
-from src.infrastructure.settings.config import get_settings
+from src.infrastructure.settings.config import describir_nilm, get_settings
 from src.infrastructure.settings.logger import logger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Ciclo de vida de la aplicación: inicialización y cierre ordenado de recursos."""
-    logger.info("Iniciando aplicación y verificando configuración...")
+    logger.info(describir_nilm(get_settings()))
     yield
-    logger.info("Cerrando recursos y conexiones de la aplicación...")
+    logger.info("Aplicación detenida")
 
 
 def create_app() -> FastAPI:
@@ -56,7 +56,7 @@ def create_app() -> FastAPI:
     async def health_check() -> dict[str, str]:
         return {"status": "ok", "environment": settings.ENVIRONMENT}
 
-    logger.info("FastAPI app initialized successfully.")
+    logger.info("Aplicación FastAPI creada")
     return app
 
 

@@ -45,3 +45,11 @@ def test_resume_grupos_e_ignora_ruido() -> None:
 def test_resumir_exige_una_etiqueta_por_evento() -> None:
     with pytest.raises(ValueError):
         resumir_cargas([EventoCarga(T0, 90)], [])
+
+
+def test_carga_on_off_requiere_encendidos_y_apagados_parecidos() -> None:
+    from src.domain.cargas.entities import Carga
+
+    assert Carga(potencia_tipica_kw=90, encendidos=10, apagados=9).es_on_off(0.5)
+    assert not Carga(potencia_tipica_kw=227, encendidos=2, apagados=10).es_on_off(0.5)
+    assert not Carga(potencia_tipica_kw=1, encendidos=0, apagados=0).es_on_off(0.5)

@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     NILM_UMBRAL_KW: float = Field(default=60.0)
     NILM_EPS_KW: float = Field(default=8.0)
     NILM_MIN_EVENTOS: int = Field(default=10)
+    # Proporción mínima encendidos/apagados para considerar una carga ON/OFF (0.5 = uno a lo sumo el doble del otro)
+    NILM_BALANCE_MINIMO: float = Field(default=0.5)
+
+
+def describir_nilm(settings: Settings) -> str:
+    return (
+        f"Configuración NILM: umbral {settings.NILM_UMBRAL_KW} kW · eps {settings.NILM_EPS_KW} kW · "
+        f"mínimo {settings.NILM_MIN_EVENTOS} eventos · datos en {settings.MEDICIONES_CSV_DIR}"
+    )
 
 
 @lru_cache
