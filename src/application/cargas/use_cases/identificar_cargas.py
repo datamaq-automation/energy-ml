@@ -5,14 +5,17 @@ from src.application.cargas.dtos.identificar_cargas import (
     CargaResponse,
     IdentificarCargasRequest,
     IdentificarCargasResponse,
+    RadioResponse,
     UmbralResponse,
 )
 from src.domain.cargas.entities import Carga, EventoCarga, Medicion
 from src.domain.cargas.repositories import AgrupadorEventos, Bitacora, MedicionRepository
 from src.domain.cargas.services import (
     detectar_eventos,
+    estimar_radio,
     estimar_umbral,
     histograma,
+    nivel_de_ruido,
     resumir_cargas,
     saltos_kw,
 )
@@ -27,7 +30,9 @@ class IdentificarCargasUseCase:
         logger: Bitacora,
         balance_minimo: float = 0.5,
         separacion_minima: float = 0.8,
+        radio_kw: float | None = None,
     ) -> None:
+        self._radio_kw = radio_kw
         self._separacion_minima = separacion_minima
         self._balance_minimo = balance_minimo
         self._logger = logger
@@ -39,10 +44,10 @@ class IdentificarCargasUseCase:
         serie = self._leer(request)
         umbral = self._elegir_umbral(serie)
         eventos = self._detectar(serie, umbral.kw)
-        self._logger.info("Paso 3/4 · Agrupando eventos por magnitud")
-        etiquetas = self._agrupador.agrupar(eventos) if eventos else []
+        radio = self._elegir_radio(eventos, nivel_de_ruido(serie, umbral.kw) if umbral.kw else 0.0)
+        etiquetas = self._agrupador.agrupar(eventos, radio.kw) if eventos and radio.kw else []
         cargas = self._resumir(serie, eventos, etiquetas)
-        return self._responder(request.medidor, serie, eventos, etiquetas, cargas, umbral)
+        return self._responder(request.medidor, serie, eventos, etiquetas, cargas, umbral, radio)
 
     def _responder(
         self,
@@ -52,6 +57,7 @@ class IdentificarCargasUseCase:
         etiquetas: list[int],
         cargas: list[Carga],
         umbral: UmbralResponse,
+        radio: RadioResponse,
     ) -> IdentificarCargasResponse:
         dias = _dias(serie)
         encendidos = sum(e.es_encendido for e in eventos)
@@ -76,6 +82,7 @@ class IdentificarCargasUseCase:
                 for c in cargas
             ],
             umbral=umbral,
+            radio=radio,
             histograma=[
                 BarraHistogramaResponse(desde_kw=b.desde_kw, hasta_kw=b.hasta_kw, cantidad=b.cantidad)
                 for b in histograma(saltos_kw(serie))
@@ -114,6 +121,19 @@ class IdentificarCargasUseCase:
         return UmbralResponse(
             kw=estimacion.umbral_kw, automatico=True, separacion=estimacion.separacion, confiable=confiable
         )
+
+    def _elegir_radio(self, eventos: list[EventoCarga], ruido_kw: float) -> RadioResponse:
+        self._logger.info("Paso 3/4 · Agrupando eventos por magnitud (DBSCAN)")
+        if self._radio_kw is not None:
+            self._logger.info("Radio fijo por configuración: %s kW", self._radio_kw)
+            return RadioResponse(kw=self._radio_kw, automatico=False)
+        radio = estimar_radio(eventos, ruido_kw)
+        if radio is not None:
+            self._logger.info(
+                "Radio automático: %s kW (mayor entre Freedman–Diaconis y 2 × ruido de la señal, ruido = %.1f kW)",
+                radio, ruido_kw,
+            )  # fmt: skip
+        return RadioResponse(kw=radio, automatico=True)
 
     def _detectar(self, serie: list[Medicion], umbral: float | None) -> list[EventoCarga]:
         if umbral is None:

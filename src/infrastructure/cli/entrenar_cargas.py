@@ -47,13 +47,12 @@ def main() -> None:
     resultados: CargaRepository = CsvCargaRepository(salida)
     caso_de_uso = IdentificarCargasUseCase(
         mediciones=repositorio,
-        agrupador=DbscanAgrupador(
-            eps_kw=settings.NILM_EPS_KW, min_eventos=settings.NILM_MIN_EVENTOS
-        ),
+        agrupador=DbscanAgrupador(min_eventos=settings.NILM_MIN_EVENTOS),
         umbral_kw=settings.NILM_UMBRAL_KW,
         logger=logger,
         balance_minimo=settings.NILM_BALANCE_MINIMO,
         separacion_minima=settings.NILM_SEPARACION_MINIMA,
+        radio_kw=settings.NILM_EPS_KW,
     )
     disponibles = repositorio.medidores()
     if not disponibles:

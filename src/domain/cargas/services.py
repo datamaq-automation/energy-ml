@@ -73,6 +73,32 @@ def estimar_umbral(mediciones: list[Medicion]) -> EstimacionUmbral | None:
     return EstimacionUmbral(umbral_kw=round(umbral, 1), separacion=round(mejor_varianza / varianza_total, 2))
 
 
+def nivel_de_ruido(mediciones: list[Medicion], umbral_kw: float) -> float:
+    """Mediana de los saltos que NO llegan al umbral: cuánto "tiembla" la señal sin eventos."""
+    ruido = sorted(s for s in saltos_kw(mediciones) if s < umbral_kw)
+    return ruido[len(ruido) // 2] if ruido else 0.0
+
+
+def estimar_radio(eventos: list[EventoCarga], ruido_kw: float = 0.0) -> float | None:
+    """Radio de agrupamiento (eps de DBSCAN): el mayor entre Freedman–Diaconis y el ruido.
+
+    - Freedman–Diaconis (2·IQR·n^(-1/3)) es el ancho "natural" para agrupar valores en una
+      dimensión: crece con la dispersión de las magnitudes y se achica con más datos.
+    - El ruido pone un piso físico: cada salto ya trae el ruido de dos mediciones, así que dos
+      saltos de la misma carga (encendido de 89 kW, apagado de 91 kW) pueden diferir hasta en
+      2 × ruido.
+    Devuelve None si no hay eventos.
+    """
+    magnitudes = sorted(abs(e.delta_kw) for e in eventos)
+    n = len(magnitudes)
+    if n == 0:
+        return None
+    rango_intercuartil = magnitudes[int(0.75 * (n - 1))] - magnitudes[int(0.25 * (n - 1))]
+    radio = 2 * rango_intercuartil * n ** (-1 / 3)
+    # Si todos los saltos son casi iguales el IQR es 0: alcanza un radio mínimo para juntarlos.
+    return round(max(radio, 2 * ruido_kw, 0.01 * magnitudes[n // 2], 0.1), 2)
+
+
 def resumir_cargas(eventos: list[EventoCarga], etiquetas: list[int]) -> list[Carga]:
     """Convierte eventos etiquetados en cargas candidatas, de mayor a menor potencia."""
     if len(eventos) != len(etiquetas):

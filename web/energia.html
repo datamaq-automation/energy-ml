@@ -46,6 +46,7 @@
     <div class="kpis" id="kpi-eventos"></div>
     <details><summary>¿Qué significa esto?</summary>
       <p>Cada salto mayor al umbral es un <strong>evento</strong>: si la potencia sube, algo se encendió (↑); si baja, algo se apagó (↓). Después, el algoritmo <strong>DBSCAN</strong> agrupa los eventos de tamaño parecido: si hay cientos de saltos de ~90 kW, probablemente sean siempre el mismo equipo. Los eventos que no se parecen a ningún grupo quedan <strong>sin grupo</strong> (ruido) en lugar de forzarlos.</p>
+      <p>El <strong>radio de agrupamiento</strong> dice qué tan parecidos tienen que ser dos saltos para ser la misma carga. Se calcula solo: es el mayor entre la regla de <strong>Freedman–Diaconis</strong> (crece si los saltos están dispersos, se achica con más datos) y <strong>2 × el ruido</strong> de la señal (el encendido y el apagado de un mismo equipo nunca miden exactamente lo mismo).</p>
     </details>
   </section>
 

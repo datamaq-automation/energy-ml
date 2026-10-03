@@ -42,7 +42,8 @@ function dibujarEventos(d) {
     kpi(d.eventos.toLocaleString('es-AR'), 'eventos (saltos ≥ umbral)')
     + kpi(`↑ ${d.encendidos}`, 'encendidos')
     + kpi(`↓ ${d.apagados}`, 'apagados')
-    + kpi(d.eventos_sin_grupo, 'sin grupo (ruido)');
+    + kpi(d.eventos_sin_grupo, 'sin grupo (ruido)')
+    + (d.radio.kw === null ? '' : kpi(kw(d.radio.kw), d.radio.automatico ? 'radio de agrupamiento (automático)' : 'radio de agrupamiento (fijo)'));
 }
 
 function frecuencia(c) {

@@ -40,7 +40,9 @@ class Settings(BaseSettings):
     NILM_UMBRAL_KW: float | None = Field(default=None)
     # Separación mínima (η de Otsu) para confiar en el umbral automático; una sola montaña da ~0.7
     NILM_SEPARACION_MINIMA: float = Field(default=0.8)
-    NILM_EPS_KW: float = Field(default=8.0)
+    # Radio de DBSCAN: qué tan parecidos tienen que ser dos saltos para ser la misma carga.
+    # None = automático por medidor (regla de Freedman–Diaconis); un número lo fija a mano.
+    NILM_EPS_KW: float | None = Field(default=None)
     NILM_MIN_EVENTOS: int = Field(default=10)
     # Proporción mínima encendidos/apagados para considerar una carga ON/OFF (0.5 = uno a lo sumo el doble del otro)
     NILM_BALANCE_MINIMO: float = Field(default=0.5)
@@ -48,8 +50,9 @@ class Settings(BaseSettings):
 
 def describir_nilm(settings: Settings) -> str:
     umbral = "automático" if settings.NILM_UMBRAL_KW is None else f"{settings.NILM_UMBRAL_KW} kW"
+    radio = "automático" if settings.NILM_EPS_KW is None else f"{settings.NILM_EPS_KW} kW"
     return (
-        f"Configuración NILM: umbral {umbral} · eps {settings.NILM_EPS_KW} kW · "
+        f"Configuración NILM: umbral {umbral} · radio {radio} · "
         f"mínimo {settings.NILM_MIN_EVENTOS} eventos · datos en {settings.MEDICIONES_CSV_DIR}"
     )
 

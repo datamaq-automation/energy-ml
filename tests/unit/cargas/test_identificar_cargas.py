@@ -22,7 +22,7 @@ class RepoFalso:
 
 
 class AgrupadorPorSigno:
-    def agrupar(self, eventos: list[EventoCarga]) -> list[int]:
+    def agrupar(self, eventos: list[EventoCarga], radio_kw: float) -> list[int]:
         return [0 for _ in eventos]
 
 

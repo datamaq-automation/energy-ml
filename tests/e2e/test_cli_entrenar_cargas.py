@@ -14,7 +14,7 @@ def carpetas(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Pat
     entrada.mkdir()
     filas = [
         f"2026-09-20T{i // 12:02d}:{5 * (i % 12):02d}:00,{kw}"
-        for i, kw in enumerate([120, 121, 210, 211] * 6)
+        for i, kw in enumerate(120 + (0, 1, 2, 1)[j % 4] + (90 if (j // 3) % 2 else 0) for j in range(72))
     ]
     (entrada / "planta.csv").write_text(
         "instante,potencia_kw\n" + "\n".join(filas) + "\n", encoding="utf-8"
@@ -33,7 +33,7 @@ def test_train_guarda_las_cargas(
     monkeypatch.setattr("sys.argv", ["train", "planta"])
     entrenar()
     lineas = (salida / "cargas_planta.csv").read_text(encoding="utf-8").splitlines()
-    assert lineas == ["potencia_tipica_kw,encendidos,apagados,ciclos", "89.9,6,5,5"]
+    assert lineas == ["potencia_tipica_kw,encendidos,apagados,ciclos", "90.0,12,11,11"]
 
 
 def test_train_no_procesa_medidores_desconocidos(

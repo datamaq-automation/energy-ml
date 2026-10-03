@@ -39,6 +39,11 @@ class UmbralResponse(BaseModel):
     confiable: bool | None = Field(default=None, description="η >= separación mínima (solo si es automático)")
 
 
+class RadioResponse(BaseModel):
+    kw: float | None = Field(description="Radio de DBSCAN usado; None si no hubo eventos")
+    automatico: bool
+
+
 class IdentificarCargasResponse(BaseModel):
     medidor: str
     mediciones: int
@@ -50,4 +55,5 @@ class IdentificarCargasResponse(BaseModel):
     potencia_media_kw: float
     cargas: list[CargaResponse]
     umbral: UmbralResponse
+    radio: RadioResponse
     histograma: list[BarraHistogramaResponse] = Field(description="Distribución de |ΔP|: ruido a la izquierda, eventos a la derecha")

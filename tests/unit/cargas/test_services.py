@@ -88,3 +88,23 @@ def test_histograma_reparte_hasta_el_percentil_99_y_junta_el_resto_al_final() ->
     assert barras[-1].hasta_kw == 99.0
     assert barras[-1].cantidad >= 2  # 99 y el valor extremo caen en la última barra
     assert histograma([]) == []
+
+
+def test_estimar_radio_crece_con_la_dispersion_y_respeta_el_piso_de_ruido() -> None:
+    from src.domain.cargas.services import estimar_radio
+
+    def eventos(deltas: list[float]) -> list[EventoCarga]:
+        return [EventoCarga(T0 + timedelta(minutes=5 * i), d) for i, d in enumerate(deltas)]
+
+    compacto = estimar_radio(eventos([90, -91, 89, -90] * 10))
+    disperso = estimar_radio(eventos([70, -110, 80, -100] * 10))
+    assert compacto is not None and disperso is not None
+    assert disperso > compacto
+    assert estimar_radio(eventos([90, -91, 89, -90] * 10), ruido_kw=5) == 10  # piso: 2 × ruido
+    assert estimar_radio([]) is None
+
+
+def test_nivel_de_ruido_es_la_mediana_de_los_saltos_bajo_el_umbral() -> None:
+    from src.domain.cargas.services import nivel_de_ruido
+
+    assert nivel_de_ruido(_serie([100, 101, 103, 193, 194, 104]), umbral_kw=50) == 1
