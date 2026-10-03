@@ -1,6 +1,7 @@
 """src/domain/cargas/services.py — Reglas de negocio puras para detectar y resumir cargas."""
 
 from collections import defaultdict
+from itertools import pairwise
 
 from src.domain.cargas.entities import Carga, EventoCarga, Medicion
 
@@ -11,7 +12,7 @@ def detectar_eventos(mediciones: list[Medicion], umbral_kw: float) -> list[Event
         raise ValueError("El umbral debe ser positivo.")
     ordenadas = sorted(mediciones, key=lambda m: m.instante)
     eventos: list[EventoCarga] = []
-    for previa, actual in zip(ordenadas, ordenadas[1:]):
+    for previa, actual in pairwise(ordenadas):
         delta = actual.potencia_kw - previa.potencia_kw
         if abs(delta) >= umbral_kw:
             eventos.append(EventoCarga(instante=actual.instante, delta_kw=delta))
@@ -23,7 +24,7 @@ def resumir_cargas(eventos: list[EventoCarga], etiquetas: list[int]) -> list[Car
     if len(eventos) != len(etiquetas):
         raise ValueError("Cada evento necesita exactamente una etiqueta.")
     grupos: dict[int, list[EventoCarga]] = defaultdict(list)
-    for evento, etiqueta in zip(eventos, etiquetas):
+    for evento, etiqueta in zip(eventos, etiquetas, strict=True):
         if etiqueta >= 0:
             grupos[etiqueta].append(evento)
     cargas = [
