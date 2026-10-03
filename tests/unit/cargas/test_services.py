@@ -108,3 +108,11 @@ def test_nivel_de_ruido_es_la_mediana_de_los_saltos_bajo_el_umbral() -> None:
     from src.domain.cargas.services import nivel_de_ruido
 
     assert nivel_de_ruido(_serie([100, 101, 103, 193, 194, 104]), umbral_kw=50) == 1
+
+
+def test_estimar_min_eventos_es_uno_por_dia_con_piso() -> None:
+    from src.domain.cargas.services import estimar_min_eventos
+
+    assert estimar_min_eventos(21.3) == 21
+    assert estimar_min_eventos(7) == 7
+    assert estimar_min_eventos(0.5) == 3

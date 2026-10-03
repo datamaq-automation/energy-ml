@@ -43,7 +43,9 @@ class Settings(BaseSettings):
     # Radio de DBSCAN: qué tan parecidos tienen que ser dos saltos para ser la misma carga.
     # None = automático por medidor: el mayor entre Freedman–Diaconis y 2 × ruido; un número lo fija a mano.
     NILM_EPS_KW: float | None = Field(default=None)
-    NILM_MIN_EVENTOS: int = Field(default=10)
+    # Eventos mínimos para que un grupo sea una carga. None = automático: uno por día analizado
+    # (al menos 3); un número lo fija a mano.
+    NILM_MIN_EVENTOS: int | None = Field(default=None)
     # Proporción mínima encendidos/apagados para considerar una carga ON/OFF (0.5 = uno a lo sumo el doble del otro)
     NILM_BALANCE_MINIMO: float = Field(default=0.5)
 
@@ -51,9 +53,10 @@ class Settings(BaseSettings):
 def describir_nilm(settings: Settings) -> str:
     umbral = "automático" if settings.NILM_UMBRAL_KW is None else f"{settings.NILM_UMBRAL_KW} kW"
     radio = "automático" if settings.NILM_EPS_KW is None else f"{settings.NILM_EPS_KW} kW"
+    minimo = "automático" if settings.NILM_MIN_EVENTOS is None else f"{settings.NILM_MIN_EVENTOS} eventos"
     return (
         f"Configuración NILM: umbral {umbral} · radio {radio} · "
-        f"mínimo {settings.NILM_MIN_EVENTOS} eventos · datos en {settings.MEDICIONES_CSV_DIR}"
+        f"mínimo {minimo} · datos en {settings.MEDICIONES_CSV_DIR}"
     )
 
 

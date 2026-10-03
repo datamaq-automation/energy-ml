@@ -1,17 +1,18 @@
 """src/application/cargas/use_cases/identificar_cargas.py — Caso de uso: qué cargas hay detrás del consumo total."""
 
 from src.application.cargas.dtos.identificar_cargas import (
+    AgrupamientoResponse,
     BarraHistogramaResponse,
     CargaResponse,
     IdentificarCargasRequest,
     IdentificarCargasResponse,
-    RadioResponse,
     UmbralResponse,
 )
 from src.domain.cargas.entities import Carga, EventoCarga, Medicion
 from src.domain.cargas.repositories import AgrupadorEventos, Bitacora, MedicionRepository
 from src.domain.cargas.services import (
     detectar_eventos,
+    estimar_min_eventos,
     estimar_radio,
     estimar_umbral,
     histograma,
@@ -31,7 +32,9 @@ class IdentificarCargasUseCase:
         balance_minimo: float = 0.5,
         separacion_minima: float = 0.8,
         radio_kw: float | None = None,
+        min_eventos: int | None = None,
     ) -> None:
+        self._min_eventos = min_eventos
         self._radio_kw = radio_kw
         self._separacion_minima = separacion_minima
         self._balance_minimo = balance_minimo
@@ -44,10 +47,14 @@ class IdentificarCargasUseCase:
         serie = self._leer(request)
         umbral = self._elegir_umbral(serie)
         eventos = self._detectar(serie, umbral.kw)
-        radio = self._elegir_radio(eventos, nivel_de_ruido(serie, umbral.kw) if umbral.kw else 0.0)
-        etiquetas = self._agrupador.agrupar(eventos, radio.kw) if eventos and radio.kw else []
+        agrupamiento = self._elegir_agrupamiento(serie, eventos, umbral.kw)
+        etiquetas = (
+            self._agrupador.agrupar(eventos, agrupamiento.radio_kw, agrupamiento.min_eventos)
+            if eventos and agrupamiento.radio_kw
+            else []
+        )
         cargas = self._resumir(serie, eventos, etiquetas)
-        return self._responder(request.medidor, serie, eventos, etiquetas, cargas, umbral, radio)
+        return self._responder(request.medidor, serie, eventos, etiquetas, cargas, umbral, agrupamiento)
 
     def _responder(
         self,
@@ -57,7 +64,7 @@ class IdentificarCargasUseCase:
         etiquetas: list[int],
         cargas: list[Carga],
         umbral: UmbralResponse,
-        radio: RadioResponse,
+        agrupamiento: AgrupamientoResponse,
     ) -> IdentificarCargasResponse:
         dias = _dias(serie)
         encendidos = sum(e.es_encendido for e in eventos)
@@ -82,7 +89,7 @@ class IdentificarCargasUseCase:
                 for c in cargas
             ],
             umbral=umbral,
-            radio=radio,
+            agrupamiento=agrupamiento,
             histograma=[
                 BarraHistogramaResponse(desde_kw=b.desde_kw, hasta_kw=b.hasta_kw, cantidad=b.cantidad)
                 for b in histograma(saltos_kw(serie))
@@ -122,18 +129,33 @@ class IdentificarCargasUseCase:
             kw=estimacion.umbral_kw, automatico=True, separacion=estimacion.separacion, confiable=confiable
         )
 
-    def _elegir_radio(self, eventos: list[EventoCarga], ruido_kw: float) -> RadioResponse:
+    def _elegir_agrupamiento(
+        self, serie: list[Medicion], eventos: list[EventoCarga], umbral_kw: float | None
+    ) -> AgrupamientoResponse:
         self._logger.info("Paso 3/4 · Agrupando eventos por magnitud (DBSCAN)")
-        if self._radio_kw is not None:
-            self._logger.info("Radio fijo por configuración: %s kW", self._radio_kw)
-            return RadioResponse(kw=self._radio_kw, automatico=False)
-        radio = estimar_radio(eventos, ruido_kw)
-        if radio is not None:
-            self._logger.info(
-                "Radio automático: %s kW (mayor entre Freedman–Diaconis y 2 × ruido de la señal, ruido = %.1f kW)",
-                radio, ruido_kw,
-            )  # fmt: skip
-        return RadioResponse(kw=radio, automatico=True)
+        radio, radio_automatico = self._radio_kw, self._radio_kw is None
+        if radio_automatico:
+            ruido = nivel_de_ruido(serie, umbral_kw) if umbral_kw else 0.0
+            radio = estimar_radio(eventos, ruido)
+            if radio is not None:
+                self._logger.info(
+                    "Radio automático: %s kW (mayor entre Freedman–Diaconis y 2 × ruido de la señal, ruido = %.1f kW)",
+                    radio, ruido,
+                )  # fmt: skip
+        else:
+            self._logger.info("Radio fijo por configuración: %s kW", radio)
+        minimo, minimo_automatico = self._min_eventos, self._min_eventos is None
+        if minimo is None:
+            minimo = estimar_min_eventos(_dias(serie))
+            self._logger.info("Mínimo automático: %d eventos por carga (uno por día analizado, al menos 3)", minimo)
+        else:
+            self._logger.info("Mínimo fijo por configuración: %d eventos por carga", minimo)
+        return AgrupamientoResponse(
+            radio_kw=radio,
+            radio_automatico=radio_automatico,
+            min_eventos=minimo,
+            min_eventos_automatico=minimo_automatico,
+        )
 
     def _detectar(self, serie: list[Medicion], umbral: float | None) -> list[EventoCarga]:
         if umbral is None:

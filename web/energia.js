@@ -43,7 +43,8 @@ function dibujarEventos(d) {
     + kpi(`↑ ${d.encendidos}`, 'encendidos')
     + kpi(`↓ ${d.apagados}`, 'apagados')
     + kpi(d.eventos_sin_grupo, 'sin grupo (ruido)')
-    + (d.radio.kw === null ? '' : kpi(kw(d.radio.kw), d.radio.automatico ? 'radio de agrupamiento (automático)' : 'radio de agrupamiento (fijo)'));
+    + (d.agrupamiento.radio_kw === null ? '' : kpi(kw(d.agrupamiento.radio_kw), `radio de agrupamiento (${d.agrupamiento.radio_automatico ? 'automático' : 'fijo'})`))
+    + kpi(d.agrupamiento.min_eventos, `eventos mínimos por carga (${d.agrupamiento.min_eventos_automatico ? 'automático' : 'fijo'})`);
 }
 
 function frecuencia(c) {

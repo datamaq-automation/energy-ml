@@ -99,6 +99,15 @@ def estimar_radio(eventos: list[EventoCarga], ruido_kw: float = 0.0) -> float | 
     return round(max(radio, 2 * ruido_kw, 0.01 * magnitudes[n // 2], 0.1), 2)
 
 
+def estimar_min_eventos(dias: float, minimo: int = 3) -> int:
+    """Eventos mínimos para que un grupo sea una carga: en promedio, al menos uno por día analizado.
+
+    Así el criterio no depende del largo del rango: 10 eventos en una semana es una carga
+    frecuente; 10 eventos en tres meses, algo que casi no pasa. Nunca baja de `minimo`.
+    """
+    return max(minimo, round(dias))
+
+
 def resumir_cargas(eventos: list[EventoCarga], etiquetas: list[int]) -> list[Carga]:
     """Convierte eventos etiquetados en cargas candidatas, de mayor a menor potencia."""
     if len(eventos) != len(etiquetas):

@@ -19,7 +19,7 @@ class RepoFalso:
 
 
 class AgrupadorUnico:
-    def agrupar(self, eventos: list[EventoCarga], radio_kw: float) -> list[int]:
+    def agrupar(self, eventos: list[EventoCarga], radio_kw: float, min_eventos: int) -> list[int]:
         return [0] * len(eventos)
 
 

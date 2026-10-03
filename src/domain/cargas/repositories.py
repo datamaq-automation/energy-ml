@@ -25,7 +25,7 @@ class Bitacora(Protocol):
 class AgrupadorEventos(Protocol):
     """Agrupa eventos por magnitud; devuelve una etiqueta por evento (-1 = ruido)."""
 
-    def agrupar(self, eventos: list[EventoCarga], radio_kw: float) -> list[int]: ...
+    def agrupar(self, eventos: list[EventoCarga], radio_kw: float, min_eventos: int) -> list[int]: ...
 
 
 class CargaRepository(Protocol):
