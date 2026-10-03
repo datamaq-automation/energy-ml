@@ -49,7 +49,13 @@ scripts/explore_nilm.py       Ejecución por consola
 | `feat(api)` | Endpoint REST | Thin controllers, inyección de dependencias |
 | `feat(scripts)` / `feat(web)` | Consola y vista web | Varios mecanismos de entrega |
 | `refactor: eliminar diabetes` | Se borra el sistema viejo | Strangler fig: reemplazo gradual |
-| `refactor: quitar MySQL` | La fuente pasa a ser CSV versionados; dominio y caso de uso no cambian | Reemplazar un adaptador sin tocar el núcleo |
+| `feat(web): static file serving` | CSS y JS fuera del HTML, servidos en `/static` | Separación de responsabilidades en el front |
+| `feat(data): datasets anonimizados` | Mediciones de UPP en `data/input/*.csv` y `scripts/entrenar_cargas.py` | Datos versionados, resultados reproducibles |
+| `feat(csv)` | `CsvMedicionRepository` y 404 para medidores desconocidos | Un segundo adaptador para el mismo puerto |
+| `feat(logging)` | Logs `info`/`warning`/`error` en cada paso; el caso de uso recibe el logger por constructor | Inyección de dependencias (puerto `Bitacora`) |
+| `feat(dependencies): remove numpy` | sklearn recibe listas; numpy deja de ser dependencia directa | Un adaptador por capacidad, no por librería |
+| `feat(refactor): migrate from MySQL to CSV` | Se borra el repositorio SQL; dominio y caso de uso no cambian | Reemplazar un adaptador sin tocar el núcleo |
+| `feat(env)` | Toda la configuración en `config.py`; `.env` solo para secretos | Configuración vs. secretos |
 
 Para ver el código en un punto del historial: `git log --oneline` y `git checkout <hash>`.
 
