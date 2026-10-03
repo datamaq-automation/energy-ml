@@ -7,6 +7,12 @@
     const markdown = await r.text();
     // DOMPurify limpia el HTML generado para que el Markdown no pueda ejecutar scripts.
     destino.innerHTML = DOMPurify.sanitize(marked.parse(markdown));
+    // Mismos id que GitHub ("## 14. Ejercicios" → "14-ejercicios") para que los enlaces internos anden en ambos lados.
+    destino.querySelectorAll('h1, h2, h3').forEach(h => {
+      h.id = h.textContent.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s/g, '-');
+    });
+    // La guía se dibuja después de cargar la página: hay que saltar al ancla a mano.
+    if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
     // Los enlaces relativos del .md apuntan a archivos del repo: en la web se abren en GitHub.
     destino.querySelectorAll('a[href]').forEach(a => {
       const href = a.getAttribute('href');

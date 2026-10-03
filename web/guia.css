@@ -1,10 +1,12 @@
 .guia{line-height:1.6}
 .guia h1{margin-bottom:.25rem}.guia h2{margin-top:2rem;border-bottom:1px solid var(--line);padding-bottom:.25rem}
 .guia a{color:var(--primary)}
-.guia table{border-collapse:collapse;width:100%;display:block;overflow-x:auto;font-size:.9rem;margin:1rem 0}
+.guia table{border-collapse:collapse;width:100%;font-size:.9rem;margin:1rem 0}
 .guia th,.guia td{border:1px solid var(--line);padding:.4rem .6rem;text-align:left;vertical-align:top}
 .guia th{background:var(--bg)}
 .guia code{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:.05rem .3rem;font-size:.88em}
-.guia pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.75rem;overflow-x:auto}
+.guia pre{font-family:"DejaVu Sans Mono",Menlo,Consolas,monospace;line-height:1.25;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.75rem;overflow-x:auto}
 .guia pre code{border:0;padding:0}
 .guia blockquote{margin:1rem 0;padding:.25rem 1rem;border-left:3px solid var(--primary);color:var(--muted)}
+.guia td code{overflow-wrap:anywhere}
+.guia td:first-child{white-space:nowrap}
