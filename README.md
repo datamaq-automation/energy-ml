@@ -59,4 +59,4 @@ src/infrastructure/cli          ./run.sh train: ejecución por consola (resultad
 
 Para ver el código en un punto del historial: `git log --oneline` y `git checkout <hash>`.
 
-**Ejercicio sugerido:** bajar `NILM_UMBRAL_KW` a 20 y ver cómo DBSCAN une todo en un solo grupo. ¿Por qué pasa? ¿Qué feature agregarías (corriente por fase, FP, hora) para separar las cargas?
+**Para clase:** la [guía docente](docs/guia-docente.md) (también en `/guia` con la app corriendo) explica el algoritmo, los hallazgos en los datos, la arquitectura commit a commit y propone ejercicios con su resultado esperado.
