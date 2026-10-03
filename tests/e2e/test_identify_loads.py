@@ -64,11 +64,12 @@ def test_static_sirve_css_y_js() -> None:
     assert cliente.get("/static/energia.js").status_code == 200
 
 
-def test_guia_sirve_la_pagina_y_solo_el_markdown_de_la_guia() -> None:
+def test_guia_sirve_el_cuaderno_y_no_la_guia_docente() -> None:
     cliente = TestClient(app)
     assert "guia.js" in cliente.get("/guia").text
-    md = cliente.get("/guia/guia-docente.md")
+    md = cliente.get("/guia/cuaderno-alumno.md")
     assert md.status_code == 200
     assert md.headers["content-type"].startswith("text/markdown")
-    assert md.text.startswith("# Guía docente")
+    assert md.text.startswith("# Cuaderno de trabajo")
+    assert cliente.get("/guia/guia-docente.md").status_code == 404  # tiene las respuestas
     assert cliente.get("/guia/srs-spec-backend-fastapi.md").status_code == 404

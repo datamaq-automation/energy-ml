@@ -1,8 +1,8 @@
-// Renderiza docs/guia-docente.md: el Markdown es la única fuente (también se lee en GitHub).
+// Renderiza docs/cuaderno-alumno.md: el Markdown es la única fuente (también se lee en GitHub).
 (async () => {
   const destino = document.getElementById('guia');
   try {
-    const r = await fetch('/guia/guia-docente.md');
+    const r = await fetch('/guia/cuaderno-alumno.md');
     if (!r.ok) throw new Error(`Error ${r.status}`);
     const markdown = await r.text();
     // DOMPurify limpia el HTML generado para que el Markdown no pueda ejecutar scripts.
@@ -24,7 +24,7 @@
     destino.innerHTML = '';
     const p = document.createElement('p');
     p.textContent = typeof marked === 'undefined'
-      ? 'No se pudo cargar el visor de Markdown (¿sin internet?). La guía está en docs/guia-docente.md.'
+      ? 'No se pudo cargar el visor de Markdown (¿sin internet?). El cuaderno está en docs/cuaderno-alumno.md.'
       : `No se pudo cargar la guía: ${e.message}`;
     destino.appendChild(p);
   }

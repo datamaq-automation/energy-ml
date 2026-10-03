@@ -59,4 +59,4 @@ src/infrastructure/cli          ./run.sh train: ejecución por consola (resultad
 
 Para ver el código en un punto del historial: `git log --oneline` y `git checkout <hash>`.
 
-**Para clase:** la [guía docente](docs/guia-docente.md) (también en `/guia` con la app corriendo) explica el algoritmo, los hallazgos en los datos, la arquitectura commit a commit y propone ejercicios con su resultado esperado.
+**Para clase:** los alumnos trabajan con el [cuaderno de trabajo](docs/cuaderno-alumno.md) (también en `/guia` con la app corriendo), con actividades sin respuestas. La [guía docente](docs/guia-docente.md) tiene el detalle técnico, las respuestas verificadas y una secuencia de clases.

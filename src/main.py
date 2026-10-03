@@ -56,10 +56,10 @@ def create_app() -> FastAPI:
     async def guia() -> FileResponse:
         return FileResponse("web/guia.html")
 
-    # Solo se publica la guía, no toda la carpeta docs/.
-    @app.get("/guia/guia-docente.md", include_in_schema=False)
+    # Solo se publica el cuaderno del alumno: la guía docente tiene las respuestas.
+    @app.get("/guia/cuaderno-alumno.md", include_in_schema=False)
     async def guia_markdown() -> FileResponse:
-        return FileResponse("docs/guia-docente.md", media_type="text/markdown; charset=utf-8")
+        return FileResponse("docs/cuaderno-alumno.md", media_type="text/markdown; charset=utf-8")
 
     @app.get("/health", tags=["Health"])
     async def health_check() -> dict[str, str]:
