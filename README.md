@@ -23,7 +23,7 @@ src/infrastructure/csv        CsvMedicionRepository (data/input/*.csv)
 src/infrastructure/sklearn    DbscanAgrupador
 src/infrastructure/fastapi    GET /api/v1/identify-loads
 web/energia.html              Vista servida en /
-scripts/explore_nilm.py       Ejecución por consola
+scripts/entrenar_cargas.py    Ejecución por consola (resultados en data/output/)
 ```
 
 ## Uso
@@ -31,8 +31,8 @@ scripts/explore_nilm.py       Ejecución por consola
 ```bash
 ./run.sh dev                      # http://localhost:8000  ·  docs en /api/v1/docs
 ./run.sh test                     # pytest + Guantelete de Restricciones
-.venv/bin/python -m scripts.explore_nilm planta_2_a 2026-09-11 2026-10-03
-.venv/bin/python -m scripts.entrenar_cargas   # resultados en data/output/
+.venv/bin/python -m scripts.entrenar_cargas                # todos los medidores → data/output/
+.venv/bin/python -m scripts.entrenar_cargas planta_2_a --desde 2026-09-15 --hasta 2026-09-22
 ```
 
 ## Evolución (para seguir commit a commit)
