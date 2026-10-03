@@ -42,15 +42,36 @@ class IdentificarCargasUseCase:
         self._logger.info("Paso 3/4 · Agrupando eventos por magnitud")
         etiquetas = self._agrupador.agrupar(eventos) if eventos else []
         cargas = self._resumir(serie, eventos, etiquetas)
-        media = sum(m.potencia_kw for m in serie) / len(serie) if serie else 0.0
+        return self._responder(request.medidor, serie, eventos, etiquetas, cargas, umbral)
+
+    def _responder(
+        self,
+        medidor: str,
+        serie: list[Medicion],
+        eventos: list[EventoCarga],
+        etiquetas: list[int],
+        cargas: list[Carga],
+        umbral: UmbralResponse,
+    ) -> IdentificarCargasResponse:
+        dias = _dias(serie)
+        encendidos = sum(e.es_encendido for e in eventos)
         return IdentificarCargasResponse(
-            medidor=request.medidor,
+            medidor=medidor,
             mediciones=len(serie),
             eventos=len(eventos),
-            potencia_media_kw=round(media, 1),
+            encendidos=encendidos,
+            apagados=len(eventos) - encendidos,
+            eventos_sin_grupo=etiquetas.count(-1),
+            dias=round(dias, 1),
+            potencia_media_kw=round(sum(m.potencia_kw for m in serie) / len(serie), 1) if serie else 0.0,
             cargas=[
                 CargaResponse(
-                    potencia_tipica_kw=c.potencia_tipica_kw, encendidos=c.encendidos, apagados=c.apagados, ciclos=c.ciclos
+                    potencia_tipica_kw=c.potencia_tipica_kw,
+                    encendidos=c.encendidos,
+                    apagados=c.apagados,
+                    ciclos=c.ciclos,
+                    ciclos_por_dia=round(c.ciclos / dias, 1) if dias >= 1 else None,
+                    on_off=c.es_on_off(self._balance_minimo),
                 )
                 for c in cargas
             ],
@@ -110,7 +131,7 @@ class IdentificarCargasUseCase:
     def _resumir(self, serie: list[Medicion], eventos: list[EventoCarga], etiquetas: list[int]) -> list[Carga]:
         self._logger.info("Paso 4/4 · Resumiendo cargas")
         cargas = resumir_cargas(eventos, etiquetas)
-        dias = (max(m.instante for m in serie) - min(m.instante for m in serie)).total_seconds() / 86400 if serie else 0
+        dias = _dias(serie)
         for c in cargas:
             por_dia = ""
             if dias >= 1:
@@ -128,3 +149,9 @@ class IdentificarCargasUseCase:
         if eventos and not cargas:
             self._logger.warning("Hubo eventos pero ningún grupo alcanzó el mínimo para ser una carga")
         return cargas
+
+
+def _dias(serie: list[Medicion]) -> float:
+    if not serie:
+        return 0.0
+    return (max(m.instante for m in serie) - min(m.instante for m in serie)).total_seconds() / 86400

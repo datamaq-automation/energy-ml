@@ -22,6 +22,8 @@ class CargaResponse(BaseModel):
     encendidos: int
     apagados: int
     ciclos: int
+    ciclos_por_dia: float | None = Field(default=None, description="None si el rango es menor a un día")
+    on_off: bool = Field(default=True, description="Encendidos y apagados parecidos: se comporta como un equipo ON/OFF")
 
 
 class BarraHistogramaResponse(BaseModel):
@@ -41,6 +43,10 @@ class IdentificarCargasResponse(BaseModel):
     medidor: str
     mediciones: int
     eventos: int
+    encendidos: int = 0
+    apagados: int = 0
+    eventos_sin_grupo: int = Field(default=0, description="Eventos que DBSCAN dejó como ruido")
+    dias: float = Field(default=0.0, description="Días cubiertos por las mediciones")
     potencia_media_kw: float
     cargas: list[CargaResponse]
     umbral: UmbralResponse

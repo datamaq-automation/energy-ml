@@ -10,23 +10,55 @@
 <body>
 <main>
 <h1>Identificador de Cargas (NILM)</h1>
-<p class="muted"><a href="/guia">Guía docente</a> · <a href="/api/v1/docs">API</a></p>
+<p class="muted">A partir del consumo total de un tablero, detecta qué equipos se encienden y se apagan. <a href="/guia">Guía docente</a> · <a href="/api/v1/docs">API</a></p>
 <form id="f">
   <label>Medidor<select name="medidor"><option selected>planta_2_a</option><option>planta_2_b</option></select></label>
   <label>Desde<input type="date" name="desde" value="2026-09-12" required></label>
   <label>Hasta<input type="date" name="hasta" value="2026-10-03" required></label>
   <button>Identificar</button>
 </form>
-<p id="resumen" class="muted">Elegí un medidor y un rango.</p>
-<section id="saltos" hidden>
-  <h2>Saltos de potencia |ΔP|</h2>
-  <p class="muted">Cada barra cuenta cuántas veces la potencia cambió esa cantidad entre dos mediciones. A la izquierda, el ruido; a la derecha, los encendidos y apagados. La línea es el umbral que los separa.</p>
-  <div id="histo" class="histo"></div>
-  <div class="eje"><span>0 kW</span><span id="eje-max"></span></div>
-  <p id="umbral"></p>
-</section>
-<h2>Cargas identificadas</h2>
-<div id="cargas"></div>
+<p id="estado" class="muted">Elegí un medidor y un rango, y presioná Identificar.</p>
+
+<div id="resultado" hidden>
+  <section class="paso">
+    <h2><span class="num">1</span> Datos leídos</h2>
+    <div class="kpis" id="kpi-datos"></div>
+    <details><summary>¿Qué significa esto?</summary>
+      <p>El medidor registra la potencia total del tablero (la suma de todos los equipos) aproximadamente cada 5 minutos. La potencia media sirve de escala: una carga de 90 kW en un tablero de 200 kW de media es casi la mitad del consumo.</p>
+    </details>
+  </section>
+
+  <section class="paso">
+    <h2><span class="num">2</span> Saltos de potencia</h2>
+    <p>Entre una medición y la siguiente, la potencia cambia. Los cambios chicos son <strong>ruido</strong> (equipos que varían de a poco); los grandes son <strong>encendidos y apagados</strong>. El umbral los separa.</p>
+    <div id="histo" class="histo" role="img" aria-label="Histograma de saltos de potencia"></div>
+    <div class="eje"><span>0 kW</span><span>tamaño del salto →</span><span id="eje-max"></span></div>
+    <p class="leyenda"><span class="muestra ruido"></span> ruido <span class="muestra evento"></span> eventos <span class="muestra corte"></span> umbral</p>
+    <p id="umbral"></p>
+    <details><summary>¿Qué significa esto?</summary>
+      <p>Cada barra cuenta cuántas veces la potencia cambió esa cantidad. Si hay <strong>dos montañas</strong> (ruido a la izquierda, eventos a la derecha) con un valle en el medio, el umbral automático cae en el valle y es confiable. Si no hay valle, el sistema avisa que el umbral es dudoso.</p>
+      <p>El umbral automático usa el <strong>método de Otsu</strong>: prueba todos los cortes y elige el que mejor separa los dos grupos. La <strong>separación η</strong> (de 0 a 1) mide qué tan claro es ese valle: menos de 0,8 es poco confiable. La altura de las barras está en escala de raíz cuadrada para que los eventos, que son pocos, no queden invisibles al lado del ruido.</p>
+    </details>
+  </section>
+
+  <section class="paso">
+    <h2><span class="num">3</span> Eventos detectados</h2>
+    <div class="kpis" id="kpi-eventos"></div>
+    <details><summary>¿Qué significa esto?</summary>
+      <p>Cada salto mayor al umbral es un <strong>evento</strong>: si la potencia sube, algo se encendió (↑); si baja, algo se apagó (↓). Después, el algoritmo <strong>DBSCAN</strong> agrupa los eventos de tamaño parecido: si hay cientos de saltos de ~90 kW, probablemente sean siempre el mismo equipo. Los eventos que no se parecen a ningún grupo quedan <strong>sin grupo</strong> (ruido) en lugar de forzarlos.</p>
+    </details>
+  </section>
+
+  <section class="paso">
+    <h2><span class="num">4</span> Cargas identificadas</h2>
+    <p class="muted">Cada grupo de eventos es un equipo candidato.</p>
+    <div id="cargas"></div>
+    <details><summary>¿Qué significa esto?</summary>
+      <p>Un equipo real que se prende y se apaga tiene una cantidad <strong>parecida</strong> de encendidos y apagados. Si uno es mucho mayor que el otro, la carga se marca como <strong>dudosa</strong>: puede ser un arranque escalonado, una parada de planta o varios equipos apagándose juntos.</p>
+      <p>El sistema no sabe qué equipo es cada carga: eso lo tiene que confirmar alguien de la planta. Es <strong>aprendizaje no supervisado</strong>.</p>
+    </details>
+  </section>
+</div>
 </main>
 </body>
 </html>
