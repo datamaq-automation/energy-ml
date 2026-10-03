@@ -43,6 +43,11 @@ case "$COMMAND" in
         echo "🚀 Iniciando servidor FastAPI en modo producción..."
         exec "$UVICORN_BIN" src.main:app --host 0.0.0.0 --port 8000
         ;;
+    train)
+        ensure_venv
+        echo "🧠 Identificando cargas en data/input/ (resultados en data/output/)..."
+        exec "$PYTHON_BIN" -m src.infrastructure.cli.entrenar_cargas "${@:2}"
+        ;;
     test)
         ensure_venv
         echo "🧪 Ejecutando suite de pruebas con pytest..."
@@ -87,6 +92,8 @@ case "$COMMAND" in
         echo "Comandos disponibles:"
         echo "  dev       : Levanta el servidor FastAPI con reload automático en puerto 8000"
         echo "  start     : Levanta el servidor FastAPI en modo producción"
+        echo "  train     : Identifica las cargas de data/input/ y guarda resultados en data/output/"
+        echo "              Opcional: medidores y --desde/--hasta (ej. ./run.sh train planta_2_a --desde 2026-09-15)"
         echo "  test      : Ejecuta la suite de pruebas unitarias y de arquitectura con pytest"
         echo "  gauntlet  : Ejecuta las 11 reglas del Guantelete de Restricciones (test_architecture.py)"
         echo "  audit     : Ejecuta auditorías de código muerto y componentes Dios"

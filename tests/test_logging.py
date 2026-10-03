@@ -9,7 +9,7 @@ UNICO = RAIZ / "src" / "infrastructure" / "settings" / "logger.py"
 def test_solo_logger_py_importa_logging() -> None:
     infractores = [
         str(p.relative_to(RAIZ))
-        for carpeta in ("src", "scripts")
+        for carpeta in ("src",)
         for p in (RAIZ / carpeta).rglob("*.py")
         if p != UNICO
         and any(

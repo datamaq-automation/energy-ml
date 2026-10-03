@@ -23,7 +23,7 @@ src/infrastructure/csv        CsvMedicionRepository (data/input/*.csv)
 src/infrastructure/sklearn    DbscanAgrupador
 src/infrastructure/fastapi    GET /api/v1/identify-loads
 web/energia.html              Vista servida en /
-scripts/entrenar_cargas.py    Ejecución por consola (resultados en data/output/)
+src/infrastructure/cli          ./run.sh train: ejecución por consola (resultados en data/output/)
 ```
 
 ## Uso
@@ -31,8 +31,8 @@ scripts/entrenar_cargas.py    Ejecución por consola (resultados en data/output/
 ```bash
 ./run.sh dev                      # http://localhost:8000  ·  docs en /api/v1/docs
 ./run.sh test                     # pytest + Guantelete de Restricciones
-.venv/bin/python -m scripts.entrenar_cargas                # todos los medidores → data/output/
-.venv/bin/python -m scripts.entrenar_cargas planta_2_a --desde 2026-09-15 --hasta 2026-09-22
+./run.sh train                    # todos los medidores → data/output/
+./run.sh train planta_2_a --desde 2026-09-15 --hasta 2026-09-22
 ```
 
 ## Evolución (para seguir commit a commit)

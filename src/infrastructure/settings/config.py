@@ -31,6 +31,8 @@ class Settings(BaseSettings):
 
     # Mediciones: un CSV por medidor (instante, potencia_kw)
     MEDICIONES_CSV_DIR: str = Field(default="data/input")
+    # Resultados del entrenamiento (no versionados)
+    RESULTADOS_DIR: str = Field(default="data/output")
 
     # NILM (valores iniciales derivados del análisis de la planta UPP)
     NILM_UMBRAL_KW: float = Field(default=60.0)

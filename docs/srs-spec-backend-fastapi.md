@@ -145,6 +145,7 @@
 │   │   ├── fastapi/                             # Mecanismo de entrega Web
 │   │   │   ├── routers/                         # Endpoints REST delgados (Thin Controllers)
 │   │   │   └── dependencies.py                  # Inyección de dependencias (Depends)
+│   │   ├── cli/                                 # Mecanismo de entrega por consola (./run.sh train)
 │   │   ├── csv/                                 # Persistencia concreta: CsvMedicionRepository
 │   │   ├── sklearn/                             # ML: DbscanAgrupador
 │   │   ├── {broker_driver_dir}/                 # Daemons/suscriptores para mensajería (si aplica)
@@ -234,9 +235,9 @@
 
   logger = setup_logging()
   ```
-* **Único punto de logging:** `logger.py` es el único archivo de `src/` y `scripts/` que importa `logging` (lo verifica `tests/test_logging.py`). La infraestructura importa `from src.infrastructure.settings.logger import logger`.
+* **Único punto de logging:** `logger.py` es el único archivo de `src/` que importa `logging` (lo verifica `tests/test_logging.py`). La infraestructura importa `from src.infrastructure.settings.logger import logger`.
 * **Niveles permitidos:** solo `info` (pasos del proceso), `warning` (resultados sospechosos: sin eventos, ruido, medidor desconocido) y `error` (no se puede continuar). No se usa `debug`: la salida está pensada para que los estudiantes sigan el proceso en la CLI.
-* **Logging en la capa de aplicación:** los casos de uso no importan infraestructura; reciben el logger por constructor, tipado con el puerto `Bitacora` (`src/domain/cargas/repositories.py`), y lo inyectan `dependencies.py` y los scripts.
+* **Logging en la capa de aplicación:** los casos de uso no importan infraestructura; reciben el logger por constructor, tipado con el puerto `Bitacora` (`src/domain/cargas/repositories.py`), y lo inyectan `dependencies.py` y la CLI (`src/infrastructure/cli/`).
 
 ---
 
