@@ -26,9 +26,3 @@ htmlcov/
 .idea/
 *.swp
 *.swo
-
-# legado diabetes
-/.venv
-/3-4_svm-avanzado (3).ipynb
-/index.html
-env.py
