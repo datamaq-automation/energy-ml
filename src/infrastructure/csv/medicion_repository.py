@@ -32,3 +32,13 @@ class CsvMedicionRepository:
             mediciones = [m for m in filas if desde <= m.instante < hasta]
         logger.info("%d mediciones dentro del rango", len(mediciones))
         return mediciones
+
+    def guardar(self, medidor: str, mediciones: list[Medicion]) -> None:
+        """Escribe <medidor>.csv con el mismo formato que lee listar (lo usa el simulador)."""
+        self._carpeta.mkdir(parents=True, exist_ok=True)
+        destino = self._carpeta / f"{medidor}.csv"
+        with destino.open("w", newline="", encoding="utf-8") as archivo:
+            escritor = csv.writer(archivo)
+            escritor.writerow(["instante", "potencia_kw"])
+            escritor.writerows((m.instante.isoformat(), m.potencia_kw) for m in mediciones)
+        logger.info("%d mediciones guardadas en %s", len(mediciones), destino)

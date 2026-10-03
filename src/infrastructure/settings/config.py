@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     MEDICIONES_CSV_DIR: str = Field(default="data/input")
     # Resultados del entrenamiento (no versionados)
     RESULTADOS_DIR: str = Field(default="data/output")
+    # Eventos reales de los medidores simulados (la "verdad" para evaluar)
+    VERDAD_DIR: str = Field(default="data/verdad")
 
     # NILM
     # Umbral |ΔP| para detectar eventos. None = automático por medidor (método de Otsu);

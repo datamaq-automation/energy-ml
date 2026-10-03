@@ -64,3 +64,21 @@ class BarraHistograma:
     desde_kw: float
     hasta_kw: float
     cantidad: int
+
+
+@dataclass(frozen=True)
+class CargaSimulada:
+    """Equipo ON/OFF de un tablero simulado: cuánto consume, cuántas veces se prende y cuánto dura."""
+
+    potencia_kw: float
+    ciclos_por_dia: float
+    duracion_min: float
+
+
+@dataclass(frozen=True)
+class EventoReal:
+    """Encendido (+) o apagado (-) que realmente ocurrió: la "verdad" contra la que se evalúa."""
+
+    instante: datetime
+    delta_kw: float
+    carga_kw: float

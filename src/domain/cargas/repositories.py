@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Protocol
 
-from src.domain.cargas.entities import Carga, EventoCarga, Medicion
+from src.domain.cargas.entities import Carga, EventoCarga, EventoReal, Medicion
 
 
 class MedicionRepository(Protocol):
@@ -32,3 +32,11 @@ class CargaRepository(Protocol):
     """Destino de las cargas identificadas de cada medidor."""
 
     def guardar(self, medidor: str, cargas: list[Carga]) -> None: ...
+
+
+class VerdadRepository(Protocol):
+    """Eventos reales de un medidor simulado: lo que el algoritmo debería encontrar."""
+
+    def guardar(self, medidor: str, eventos: list[EventoReal]) -> None: ...
+
+    def listar(self, medidor: str) -> list[EventoReal]: ...

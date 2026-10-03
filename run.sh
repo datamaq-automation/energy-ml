@@ -48,6 +48,11 @@ case "$COMMAND" in
         echo "🧠 Identificando cargas en data/input/ (resultados en data/output/)..."
         exec "$PYTHON_BIN" -m src.infrastructure.cli.entrenar_cargas "${@:2}"
         ;;
+    simulate)
+        ensure_venv
+        echo "🧪 Generando un tablero simulado con cargas conocidas..."
+        exec "$PYTHON_BIN" -m src.infrastructure.cli.simular_tablero "${@:2}"
+        ;;
     test)
         ensure_venv
         echo "🧪 Ejecutando suite de pruebas con pytest..."
@@ -94,6 +99,7 @@ case "$COMMAND" in
         echo "  start     : Levanta el servidor FastAPI en modo producción"
         echo "  train     : Identifica las cargas de data/input/ y guarda resultados en data/output/"
         echo "              Opcional: medidores y --desde/--hasta (ej. ./run.sh train planta_2_a --desde 2026-09-15)"
+        echo "  simulate  : Genera data/input/sintetico.csv y su verdad en data/verdad/ (cargas conocidas)"
         echo "  test      : Ejecuta la suite de pruebas unitarias y de arquitectura con pytest"
         echo "  gauntlet  : Ejecuta las 11 reglas del Guantelete de Restricciones (test_architecture.py)"
         echo "  audit     : Ejecuta auditorías de código muerto y componentes Dios"
