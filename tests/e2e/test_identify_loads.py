@@ -41,3 +41,9 @@ def test_identify_loads_devuelve_cargas() -> None:
         assert invalido.status_code == 422
     finally:
         app.dependency_overrides.clear()
+
+
+def test_raiz_sirve_la_vista_de_energia() -> None:
+    r = TestClient(app).get("/")
+    assert r.status_code == 200
+    assert "Identificador de Cargas" in r.text
