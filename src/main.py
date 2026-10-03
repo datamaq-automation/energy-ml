@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.infrastructure.fastapi.routers.cargas import router as cargas_router
 from src.infrastructure.settings.config import get_settings
@@ -39,6 +40,8 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(cargas_router, prefix=settings.API_V1_PREFIX)
+
+    app.mount("/static", StaticFiles(directory="web"), name="static")
 
     @app.get("/", include_in_schema=False)
     async def energia() -> FileResponse:

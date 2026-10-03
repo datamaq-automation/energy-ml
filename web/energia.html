@@ -4,18 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Identificador de Cargas</title>
-<style>
-:root{--bg:#f9fafb;--card:#fff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--primary:#2563eb}
-@media (prefers-color-scheme:dark){:root{--bg:#0b1020;--card:#111827;--line:#374151;--text:#f3f4f6;--muted:#9ca3af;--primary:#60a5fa}}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:2rem 16px}
-main{max-width:760px;margin:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1.5rem}
-h1{color:var(--primary);margin-top:0}form{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;margin-bottom:1.5rem}
-label{display:flex;flex-direction:column;font-size:.85rem;color:var(--muted);gap:.25rem}
-input,select,button{font:inherit;padding:.45rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text)}
-button{background:var(--primary);color:#fff;border:0;cursor:pointer}
-.fila{display:grid;grid-template-columns:6rem 1fr 9rem;gap:.75rem;align-items:center;margin:.4rem 0;font-variant-numeric:tabular-nums}
-.barra{height:.9rem;background:var(--primary);border-radius:3px}.muted{color:var(--muted)}
-</style>
+<link rel="stylesheet" href="/static/energia.css">
+<script src="/static/energia.js" defer></script>
 </head>
 <body>
 <main>
@@ -29,22 +19,5 @@ button{background:var(--primary);color:#fff;border:0;cursor:pointer}
 <p id="resumen" class="muted">Elegí un medidor y un rango.</p>
 <div id="cargas"></div>
 </main>
-<script>
-const f = document.getElementById('f');
-f.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const q = new URLSearchParams(new FormData(f));
-  const resumen = document.getElementById('resumen'), cont = document.getElementById('cargas');
-  resumen.textContent = 'Calculando…'; cont.innerHTML = '';
-  const r = await fetch(`/api/v1/identify-loads?${q}`);
-  if (!r.ok) { resumen.textContent = `Error ${r.status}`; return; }
-  const d = await r.json();
-  resumen.textContent = `${d.mediciones} mediciones · ${d.eventos} eventos · potencia media ${d.potencia_media_kw} kW`;
-  const max = Math.max(...d.cargas.map(c => c.potencia_tipica_kw), 1);
-  d.cargas.forEach(c => cont.insertAdjacentHTML('beforeend',
-    `<div class="fila"><strong>${c.potencia_tipica_kw} kW</strong><div class="barra" style="width:${c.potencia_tipica_kw / max * 100}%"></div><span class="muted">↑${c.encendidos} ↓${c.apagados}</span></div>`));
-  if (!d.cargas.length) cont.textContent = 'No se identificaron cargas con los parámetros actuales.';
-});
-</script>
 </body>
 </html>
