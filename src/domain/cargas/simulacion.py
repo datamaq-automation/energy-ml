@@ -49,6 +49,8 @@ def _encendidos(carga: CargaSimulada, n: int, azar: random.Random) -> list[bool]
         duracion = max(1, round(azar.gauss(carga.duracion_min, carga.duracion_min * 0.2) / PASO_MIN))
         for j in range(i, min(n, i + duracion)):
             on[j] = True
-        espera = max(1, round(azar.expovariate(carga.ciclos_por_dia / MUESTRAS_POR_DIA)))
-        i += duracion + espera
+        # Tiempo entre arranques con media "un día / ciclos_por_dia"; la espera es lo que sobra
+        # después de la duración, así la frecuencia real coincide con la pedida.
+        entre_arranques = azar.expovariate(carga.ciclos_por_dia / MUESTRAS_POR_DIA)
+        i += max(duracion + 1, round(entre_arranques))
     return on
