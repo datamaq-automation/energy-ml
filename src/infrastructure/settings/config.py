@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,6 +32,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="change-this-insecure-secret-key-in-production")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
 
+    # Fuente de mediciones: "csv" (data/input/, sin base de datos) o "mysql" (DATABASE_URL)
+    MEDICIONES_FUENTE: Literal["csv", "mysql"] = Field(default="csv")
+    MEDICIONES_CSV_DIR: str = Field(default="data/input")
     # Base de Datos
     DATABASE_URL: str = Field(default="mysql+pymysql://usuario:clave@127.0.0.1:3306/datamaq_telemetry")
 

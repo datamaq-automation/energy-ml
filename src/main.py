@@ -47,6 +47,10 @@ def create_app() -> FastAPI:
         logger.error("No se pudo conectar a la base de datos: %s", exc.orig)
         return JSONResponse(status_code=503, content={"detail": "Base de datos no disponible"})
 
+    @app.exception_handler(LookupError)
+    async def medidor_desconocido(request: Request, exc: LookupError) -> JSONResponse:
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+
     app.mount("/static", StaticFiles(directory="web"), name="static")
 
     @app.get("/", include_in_schema=False)
