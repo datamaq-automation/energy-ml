@@ -12,15 +12,25 @@ Este repositorio empezó como un clasificador de diabetes (Flask + SVC + Supabas
 
 En la planta piloto (UPP, 11-09 a 03-10-2026), con los valores por defecto aparece una carga ON/OFF de **~92 kW** en *planta_2_a* (412 encendidos y 380 apagados) y otra de **~88 kW** en *planta_2_b*. El análisis completo está en el informe NILM.
 
-## Contexto Pedagógico
+## 🎓 Caso de Estudio del Curso "Procesamiento de Aprendizaje Automático"
 
-**Este proyecto es un caso de estudio práctico** del curso **"Procesamiento de Aprendizaje Automático"** en el Instituto Superior de Formación Técnica N° 199: https://isftn199.com.ar/cursos/procesamiento-aprendizaje-automatico
+Este proyecto es un **caso de estudio real** del curso **[Procesamiento de Aprendizaje Automático](https://isftn199.com.ar/cursos/procesamiento-aprendizaje-automatico)** del Instituto Superior de Formación Técnica N° 199 de Tigre (ISFT N° 199).
 
-El curso cubre desde fundamentos (terminal, Git, FastAPI) hasta conceptos avanzados (clasificación, evaluación de modelos, árboles de decisión). Energy-ml implementa varios de estos conceptos:
+### Mapeo: Lecciones del curso → Código en energy-ml
 
-- **Unidad 1, Cap 4:** API REST con FastAPI (`src/infrastructure/fastapi`)
-- **Unidad 2, Cap 5:** Evaluación de modelos con matriz de confusión
-- **Unidad 3, Cap 3:** Clustering como base para clasificación de cargas
+| Lección | Concepto | Ubicación en energy-ml |
+|---------|----------|------------------------|
+| **Cap 4.2** — Primer servidor FastAPI | Servir modelos en endpoints REST | `src/infrastructure/fastapi/routes.py` — endpoint `POST /api/v1/identify-loads` |
+| **Cap 5.1** — Matriz de confusión, F1-Score | Evaluar precisión de clustering | `src/application/cargas/metricas.py` — evaluación con sklearn.metrics |
+| **Cap 3.1** — Entropía, Gini, árboles de decisión | Decisiones basadas en datos | `src/infrastructure/sklearn/clustering.py` — DBSCAN usa densidad para separar clusters |
+
+### ¿Cómo estudiar este proyecto?
+
+1. **Lee el documento de contexto:** [Caso de Estudio: energy-ml — NILM](docs/conexion-curso-isftn199.md)
+2. **Sigue la arquitectura limpia:** Domain → Application (DTOs) → Infrastructure (FastAPI + sklearn) → Adapters (presenters)
+3. **Mira el mapeo lección-a-código:** Usa la tabla arriba como guía de navegación
+4. **Prueba los endpoints:** `curl -X POST http://localhost:8000/api/v1/identify-loads -F "file=@data/input/planta_2_a.csv"`
+5. **Audita con agentes:** Lee el árbol de decisión exportado en JSON
 
 ---
 
