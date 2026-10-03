@@ -9,6 +9,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Toda la configuración vive acá con sus valores por defecto; .env es solo para secretos."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -26,10 +28,6 @@ class Settings(BaseSettings):
     VERSION: str = Field(default="1.0.0")
     API_V1_PREFIX: str = Field(default="/api/v1")
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*"])
-
-    # Seguridad
-    SECRET_KEY: str = Field(default="change-this-insecure-secret-key-in-production")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
 
     # Mediciones: un CSV por medidor (instante, potencia_kw)
     MEDICIONES_CSV_DIR: str = Field(default="data/input")

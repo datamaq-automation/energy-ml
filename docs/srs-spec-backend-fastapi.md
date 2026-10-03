@@ -17,20 +17,20 @@
 * **Mercado Objetivo:** Plantas industriales PyME con medidores de energía trifásicos ya instalados (caso piloto: planta UPP).
 * **Buyer Persona (Decisor / Cliente Ideal):** Gerente de planta / responsable de mantenimiento que busca reducir el costo energético.
 * **User Persona (Operador / Usuario Final):** Técnico de mantenimiento que consulta qué equipos estuvieron encendidos y cuándo.
-* **Alcance Geográfico & Modalidad:** Servicio en VPS propio que lee la base `datamaq_telemetry` (MySQL 8).
+* **Alcance Geográfico & Modalidad:** Servicio local (proyecto educativo) que lee datasets CSV versionados en `data/input/`. Los datos se extrajeron una vez de la telemetría de la planta y se anonimizaron.
 * **Fuera de Alcance (*Out of Scope*):** Control de equipos, facturación, autenticación de usuarios, deep learning, tiempo real sub-minuto.
 
 ### 1.2. Pilares de Valor de la Solución
 | Pilar | Enfoque | Implementación en este Sistema |
 | :--- | :--- | :--- |
-| **1. Activos & Entorno Operativo** | Infraestructura física, dispositivos, hardware o fuentes de datos base. | Medidores 'Trafo arriba' y 'Trafo abajo': potencia cada 5 min (`telemetry_instantaneous`, en W) y contadores kWh cada ~42 s (`telemetry_energy`) |
-| **2. Software & Lógica de Negocio** | Captura, procesamiento en tiempo real, persistencia y APIs. | Lectura de series → detección de eventos ΔP → agrupamiento (DBSCAN) en cargas → API REST `/identify-loads` |
+| **1. Activos & Entorno Operativo** | Infraestructura física, dispositivos, hardware o fuentes de datos base. | Dos tableros de la planta UPP, anonimizados como `planta_2_a` y `planta_2_b`: potencia activa total cada 5 min, en kW (`data/input/<medidor>.csv`, columnas `instante,potencia_kw`) |
+| **2. Software & Lógica de Negocio** | Captura, procesamiento en tiempo real, persistencia y APIs. | Lectura de series CSV → detección de eventos ΔP → agrupamiento (DBSCAN) en cargas → API REST `/identify-loads`, CLI y resultados en `data/output/` |
 | **3. Impacto Económico & ROI** | Optimización de costos, generación de ingresos o eficiencia operativa. | Atribuir consumo por equipo (ej. carga ON/OFF de ~90 kW, ≈19 ciclos/día) para detectar usos ociosos |
 
 ### 1.3. Coordinación Operativa, Roles & Seguridad
 * **Liderazgo Técnico / Responsable:** agustin.
 * **Ventanas Operativas & Disponibilidad:** Análisis histórico batch; sin SLA de producción (proyecto educativo).
-* **Habilitaciones, Normativas & Seguridad:** Acceso de solo lectura a la BD de telemetría; credenciales solo en `.env`.
+* **Habilitaciones, Normativas & Seguridad:** Los datasets publicados no contienen nombres reales de medidores ni de clientes. El script de extracción (`tmp/`) no se versiona. La API solo lee CSV existentes en la carpeta configurada (sin rutas arbitrarias).
 
 ---
 
@@ -39,14 +39,14 @@
 ### 2.1. Matriz del Business Model Canvas
 | Bloque Canvas | Definición Estratégica | Componentes Clave en el Software |
 | :--- | :--- | :--- |
-| **1. Socios Clave (KP)** | Proveedor de medidores y VPS | Lectura de `datamaq_telemetry` |
+| **1. Socios Clave (KP)** | Planta piloto UPP y proveedor de medidores | Datasets anonimizados en `data/input/` |
 | **2. Actividades Clave (KA)** | Desagregación de consumo (NILM) | Casos de uso `DetectarEventos`, `IdentificarCargas` |
-| **3. Recursos Clave (KR)** | Series históricas de telemetría | Repositorio MySQL de mediciones |
+| **3. Recursos Clave (KR)** | Series históricas de telemetría | `CsvMedicionRepository` sobre `data/input/*.csv` |
 | **4. Propuesta de Valor (VP)** | Saber qué equipo consume sin instalar medidores por equipo | `GET /api/v1/identify-loads` |
 | **5. Relación con Clientes (CR)** | Informes y validación con personal de planta | Etiquetado manual de cargas (posterior) |
 | **6. Canales de Distribución (CH)** | API REST + vista web | Routers FastAPI |
 | **7. Segmentos de Clientes (CS)** | Plantas con medición trifásica | Un medidor = una serie |
-| **8. Estructura de Costos (CS)** | VPS existente | Consultas agregadas, sin GPU |
+| **8. Estructura de Costos (CS)** | Sin infraestructura: corre en la PC de cada alumno | Lectura de CSV en memoria, sin GPU |
 | **9. Fuentes de Ingresos (RS)** | Fuera de alcance (proyecto educativo) | — |
 
 ### 2.2. Organigrama Operativo / Gobernanza de Agentes IA (Opcional)
@@ -66,14 +66,14 @@
 ## 3. Especificación de Requisitos de Software (SRS)
 
 ### 3.1. Requisitos Funcionales (FR)
-* **FR-01 - Ingesta y Validación de Datos:** El sistema debe leer series de potencia y energía de `datamaq_telemetry` por medidor y rango de fechas, validando estrictamente los schemas mediante Pydantic v2.
-* **FR-02 - Persistencia Transaccional:** El sistema debe almacenar las transacciones en MySQL 8 (lectura; resultados en tabla propia en etapa posterior) mediante el patrón Repository tipado.
+* **FR-01 - Ingesta y Validación de Datos:** El sistema debe leer series de potencia desde `data/input/<medidor>.csv` por medidor y rango de fechas, validando estrictamente los schemas mediante Pydantic v2. Un medidor sin CSV responde 404.
+* **FR-02 - Persistencia:** El sistema lee las mediciones mediante el patrón Repository tipado (`MedicionRepository`) y escribe los resultados del entrenamiento en `data/output/cargas_<medidor>.csv` (no versionados: cada alumno los genera).
 * **FR-03 - Emisión de Eventos y Notificaciones:** El sistema debe emitir alertas/eventos asíncronos vía (etapa posterior) webhook cuando una carga identificada supere su consumo típico.
 * **FR-04 - Control de Acceso y Autorización:** El sistema debe restringir el acceso a los recursos mediante API key (etapa posterior); en la etapa didáctica la API es local.
 * **FR-05 - Seguridad y Anti-Abuso:** El sistema debe implementar rate limiting, sanitización estricta de entradas y mitigación de vulnerabilidades OWASP (SQLi, XSS, SSRF).
 * **FR-06 - Detección de Eventos:** El sistema debe detectar cambios de estado como saltos |ΔP| entre muestras consecutivas mayores a un umbral configurable (por defecto 60 kW).
 * **FR-07 - Identificación de Cargas:** El sistema debe agrupar los eventos por magnitud (DBSCAN, `eps` y `min_samples` configurables) y devolver cada grupo como carga candidata con potencia típica y cantidad de encendidos/apagados.
-* **FR-08 - Validación de Unidades:** El sistema debe convertir la potencia de W a kW en el adaptador de datos; el dominio trabaja siempre en kW.
+* **FR-08 - Validación de Unidades:** Los datasets ya están en kW (la conversión desde W se hace al extraerlos); el dominio trabaja siempre en kW.
 
 ### 3.2. Requisitos No Funcionales (NFR)
 * **NFR-01 - Latencia y Rendimiento:** La latencia p95 en lecturas debe ser inferior a 2000 ms bajo condiciones normales de operación.
@@ -92,7 +92,7 @@
 * **Framework Web:** FastAPI (asíncrono, OpenAPI autodocumentado).
 * **Validación & Schemas:** Pydantic v2 (`BaseModel`, `Field`, `ConfigDict`).
 * **Configuración Centralizada:** `pydantic-settings` (`BaseSettings`, `SettingsConfigDict`).
-* **ORM & Persistencia:** SQLAlchemy 2.0 Core + PyMySQL (consultas parametrizadas, solo lectura).
+* **Persistencia:** archivos CSV con la librería estándar (`csv`); sin base de datos ni ORM.
 * **Broker & Mensajería (Opcional):** no aplica en esta etapa.
 * **Testing:** Pytest (`pytest-asyncio`, `httpx`).
 * **Linters & Tipado:** Ruff y Pyright (modo estricto).
@@ -145,9 +145,8 @@
 │   │   ├── fastapi/                             # Mecanismo de entrega Web
 │   │   │   ├── routers/                         # Endpoints REST delgados (Thin Controllers)
 │   │   │   └── dependencies.py                  # Inyección de dependencias (Depends)
-│   │   ├── {orm_driver_dir}/                    # Persistencia concreta (ej. sqlalchemy)
-│   │   │   ├── models/                          # DeclarativeBase y esquemas de tablas
-│   │   │   └── repositories/                    # Implementaciones concretas de domain/.../repositories.py
+│   │   ├── csv/                                 # Persistencia concreta: CsvMedicionRepository
+│   │   ├── sklearn/                             # ML: DbscanAgrupador
 │   │   ├── {broker_driver_dir}/                 # Daemons/suscriptores para mensajería (si aplica)
 │   │   └── settings/                            # Configuración y Logging Centralizado
 │   │       ├── __init__.py                      # (0 bytes obligatorio)
@@ -160,7 +159,7 @@
     ├── __init__.py                              # (0 bytes obligatorio)
     ├── test_architecture.py                     # Validador AST del Guantelete de Restricciones
     ├── unit/                                    # Pruebas unitarias de domain y use_cases
-    ├── integration/                             # Pruebas de integración con DB/broker
+    ├── integration/                             # Pruebas de integración de adaptadores (CSV, DBSCAN)
     └── e2e/                                     # Pruebas de endpoints FastAPI (httpx.AsyncClient)
 ```
 
@@ -168,7 +167,7 @@
 
 #### A. Gestión de Entorno (`.env`, `.env.example`, `.gitignore`)
 * **Regla de Seguridad:** El archivo `.env` contiene credenciales sensibles y **NUNCA** se commitea a Git. El archivo [`.gitignore`](file:///home/agustin/proyectos_software/spec/.gitignore) debe excluir explícitamente `.env` y `.env.*` (excepto `!.env.example`).
-* **Plantilla Canónica (`.env.example`):** Define todas las claves de configuración necesarias con valores ficticios o de desarrollo para guiar el setup local y pipelines de CI/CD.
+* **Solo secretos en `.env`:** `.env` y `.env.example` contienen únicamente secretos (claves, tokens, contraseñas). Toda la configuración no secreta se declara con su valor por defecto en `src/infrastructure/settings/config.py`. Hoy el proyecto no tiene secretos, así que `.env.example` solo documenta esta regla.
 
 #### B. `src/infrastructure/settings/config.py` (Pydantic Settings)
 * Centraliza toda la configuración del sistema en una clase `Settings` derivada de `pydantic_settings.BaseSettings`:
@@ -197,12 +196,13 @@
       API_V1_PREFIX: str = Field(default="/api/v1")
       ALLOWED_HOSTS: List[str] = Field(default_factory=lambda: ["*"])
 
-      # Seguridad
-      SECRET_KEY: str = Field(default="insecure-secret-key-change-in-production")
-      ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
+      # Mediciones
+      MEDICIONES_CSV_DIR: str = Field(default="data/input")
 
-      # Base de Datos
-      DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./app.db")
+      # NILM
+      NILM_UMBRAL_KW: float = Field(default=60.0)
+      NILM_EPS_KW: float = Field(default=8.0)
+      NILM_MIN_EVENTOS: int = Field(default=10)
 
   @lru_cache()
   def get_settings() -> Settings:
@@ -231,6 +231,9 @@
 
   logger = setup_logging()
   ```
+* **Único punto de logging:** `logger.py` es el único archivo de `src/` y `scripts/` que importa `logging` (lo verifica `tests/test_logging.py`). La infraestructura importa `from src.infrastructure.settings.logger import logger`.
+* **Niveles permitidos:** solo `info` (pasos del proceso), `warning` (resultados sospechosos: sin eventos, ruido, medidor desconocido) y `error` (no se puede continuar). No se usa `debug`: la salida está pensada para que los estudiantes sigan el proceso en la CLI.
+* **Logging en la capa de aplicación:** los casos de uso no importan infraestructura; reciben el logger por constructor, tipado con el puerto `Bitacora` (`src/domain/cargas/repositories.py`), y lo inyectan `dependencies.py` y los scripts.
 
 ---
 
