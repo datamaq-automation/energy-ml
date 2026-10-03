@@ -41,6 +41,8 @@ def test_identify_loads_devuelve_cargas() -> None:
         assert body["umbral"] == {"kw": 60.0, "automatico": False, "separacion": None, "confiable": None}
         assert sum(b["cantidad"] for b in body["histograma"]) == 2
         assert (body["encendidos"], body["apagados"], body["eventos_sin_grupo"]) == (1, 1, 0)
+        assert [p["potencia_kw"] for p in body["serie"]] == [120, 210, 120]
+        assert [(e["delta_kw"], e["carga_kw"]) for e in body["detalle_eventos"]] == [(90.0, 90.0), (-90.0, 90.0)]
         invalido = TestClient(app).get(
             "/api/v1/identify-loads", params={"medidor": "X", "desde": "2026-09-21", "hasta": "2026-09-20"}
         )

@@ -4,8 +4,10 @@ from src.application.cargas.dtos.identificar_cargas import (
     AgrupamientoResponse,
     BarraHistogramaResponse,
     CargaResponse,
+    EventoResponse,
     IdentificarCargasRequest,
     IdentificarCargasResponse,
+    PuntoResponse,
     UmbralResponse,
 )
 from src.domain.cargas.entities import Carga, EventoCarga, Medicion
@@ -90,6 +92,8 @@ class IdentificarCargasUseCase:
             ],
             umbral=umbral,
             agrupamiento=agrupamiento,
+            serie=[PuntoResponse(instante=m.instante, potencia_kw=m.potencia_kw) for m in sorted(serie, key=lambda m: m.instante)],
+            detalle_eventos=_detalle_eventos(eventos, etiquetas),
             histograma=[
                 BarraHistogramaResponse(desde_kw=b.desde_kw, hasta_kw=b.hasta_kw, cantidad=b.cantidad)
                 for b in histograma(saltos_kw(serie))
@@ -197,3 +201,17 @@ def _dias(serie: list[Medicion]) -> float:
     if not serie:
         return 0.0
     return (max(m.instante for m in serie) - min(m.instante for m in serie)).total_seconds() / 86400
+
+
+def _detalle_eventos(eventos: list[EventoCarga], etiquetas: list[int]) -> list[EventoResponse]:
+    """Cada evento con la potencia típica de su grupo (la misma que calcula resumir_cargas)."""
+    por_grupo: dict[int, list[float]] = {}
+    for evento, etiqueta in zip(eventos, etiquetas, strict=False):
+        if etiqueta >= 0:
+            por_grupo.setdefault(etiqueta, []).append(abs(evento.delta_kw))
+    potencia = {g: round(sum(v) / len(v), 1) for g, v in por_grupo.items()}
+    etiquetas_completas = etiquetas or [-1] * len(eventos)
+    return [
+        EventoResponse(instante=e.instante, delta_kw=round(e.delta_kw, 1), carga_kw=potencia.get(g))
+        for e, g in zip(eventos, etiquetas_completas, strict=True)
+    ]

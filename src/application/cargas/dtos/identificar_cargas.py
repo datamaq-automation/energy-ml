@@ -26,6 +26,17 @@ class CargaResponse(BaseModel):
     on_off: bool = Field(default=True, description="Encendidos y apagados parecidos: se comporta como un equipo ON/OFF")
 
 
+class PuntoResponse(BaseModel):
+    instante: datetime
+    potencia_kw: float
+
+
+class EventoResponse(BaseModel):
+    instante: datetime
+    delta_kw: float = Field(description="Positivo: encendido; negativo: apagado")
+    carga_kw: float | None = Field(description="Potencia típica de la carga a la que pertenece; None si quedó sin grupo")
+
+
 class BarraHistogramaResponse(BaseModel):
     desde_kw: float
     hasta_kw: float
@@ -58,4 +69,6 @@ class IdentificarCargasResponse(BaseModel):
     cargas: list[CargaResponse]
     umbral: UmbralResponse
     agrupamiento: AgrupamientoResponse
+    serie: list[PuntoResponse] = Field(default_factory=list, description="Potencia en el tiempo (paso 1)")
+    detalle_eventos: list[EventoResponse] = Field(default_factory=list, description="Cada evento, para marcarlo en la serie")
     histograma: list[BarraHistogramaResponse] = Field(description="Distribución de |ΔP|: ruido a la izquierda, eventos a la derecha")
