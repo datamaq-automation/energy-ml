@@ -5,7 +5,6 @@ Uso:
 """
 
 import csv
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -13,6 +12,7 @@ from src.application.cargas.dtos.identificar_cargas import IdentificarCargasRequ
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import get_settings
+from src.infrastructure.settings.logger import logger
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 
 DATA = Path(__file__).resolve().parent.parent / "data"
@@ -26,9 +26,15 @@ def main() -> None:
         mediciones=CsvMedicionRepository(ENTRADA),
         agrupador=DbscanAgrupador(eps_kw=settings.NILM_EPS_KW, min_eventos=settings.NILM_MIN_EVENTOS),
         umbral_kw=settings.NILM_UMBRAL_KW,
+        logger=logger,
     )
     SALIDA.mkdir(parents=True, exist_ok=True)
-    for entrada in sorted(ENTRADA.glob("*.csv")):
+    entradas = sorted(ENTRADA.glob("*.csv"))
+    if not entradas:
+        logger.error("No hay CSV en %s: corré primero la exportación de datos", ENTRADA)
+        return
+    logger.info("Entrenando con %d archivos de %s", len(entradas), ENTRADA)
+    for entrada in entradas:
         desde, hasta = TODO_EL_RANGO
         r = caso_de_uso.execute(IdentificarCargasRequest(medidor=entrada.stem, desde=desde, hasta=hasta))
         destino = SALIDA / f"cargas_{entrada.name}"
@@ -36,9 +42,7 @@ def main() -> None:
             escritor = csv.writer(archivo)
             escritor.writerow(["potencia_tipica_kw", "encendidos", "apagados", "ciclos"])
             escritor.writerows((c.potencia_tipica_kw, c.encendidos, c.apagados, c.ciclos) for c in r.cargas)
-        sys.stdout.write(
-            f"{entrada.stem}: {r.mediciones} mediciones, {r.eventos} eventos, {len(r.cargas)} cargas -> {destino.name}\n"
-        )
+        logger.info("%s: %d cargas guardadas en %s", entrada.stem, len(r.cargas), destino.relative_to(DATA.parent))
 
 
 if __name__ == "__main__":

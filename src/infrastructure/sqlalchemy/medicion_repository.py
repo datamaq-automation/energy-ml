@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Engine, Float, text
 
 from src.domain.cargas.entities import Medicion
+from src.infrastructure.settings.logger import logger
 
 W_POR_KW = 1000.0
 
@@ -29,6 +30,9 @@ class SqlMedicionRepository:
         self._engine = engine
 
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
+        logger.info("Consultando MySQL: %s", medidor)
         with self._engine.connect() as conexion:
             filas = conexion.execute(_CONSULTA, {"medidor": medidor, "desde": desde, "hasta": hasta})
-            return [Medicion(instante=f[0], potencia_kw=float(f[1]) / W_POR_KW) for f in filas]
+            mediciones = [Medicion(instante=f[0], potencia_kw=float(f[1]) / W_POR_KW) for f in filas]
+        logger.info("%d mediciones recibidas de MySQL", len(mediciones))
+        return mediciones

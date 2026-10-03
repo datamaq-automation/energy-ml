@@ -49,6 +49,7 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(LookupError)
     async def medidor_desconocido(request: Request, exc: LookupError) -> JSONResponse:
+        logger.warning("Respondiendo 404: %s", exc)
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
     app.mount("/static", StaticFiles(directory="web"), name="static")

@@ -9,6 +9,7 @@ from src.application.cargas.use_cases.identificar_cargas import IdentificarCarga
 from src.domain.cargas.repositories import MedicionRepository
 from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import get_settings
+from src.infrastructure.settings.logger import logger
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 from src.infrastructure.sqlalchemy.medicion_repository import SqlMedicionRepository
 
@@ -31,4 +32,5 @@ def get_identificar_cargas() -> IdentificarCargasUseCase:
         mediciones=get_mediciones(),
         agrupador=DbscanAgrupador(eps_kw=settings.NILM_EPS_KW, min_eventos=settings.NILM_MIN_EVENTOS),
         umbral_kw=settings.NILM_UMBRAL_KW,
+        logger=logger,
     )

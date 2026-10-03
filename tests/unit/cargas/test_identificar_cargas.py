@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from src.application.cargas.dtos.identificar_cargas import IdentificarCargasRequest
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.domain.cargas.entities import EventoCarga, Medicion
+from src.infrastructure.settings.logger import logger
 
 T0 = datetime(2026, 9, 20)
 
@@ -26,7 +27,7 @@ class AgrupadorPorSigno:
 
 
 def pedir(kw: list[float]) -> IdentificarCargasUseCase:
-    return IdentificarCargasUseCase(RepoFalso(kw), AgrupadorPorSigno(), umbral_kw=60)
+    return IdentificarCargasUseCase(RepoFalso(kw), AgrupadorPorSigno(), umbral_kw=60, logger=logger)
 
 
 def test_identifica_una_carga_ciclica() -> None:

@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.domain.cargas.entities import Medicion
+from src.infrastructure.settings.logger import logger
 
 
 class CsvMedicionRepository:
@@ -19,10 +20,15 @@ class CsvMedicionRepository:
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
         # Solo nombres de archivos existentes: evita leer rutas arbitrarias ("../.env").
         if medidor not in self.medidores():
+            logger.error("Medidor desconocido: %s (disponibles: %s)", medidor, ", ".join(self.medidores()))
             raise LookupError(f"Medidor desconocido: {medidor}")
-        with (self._carpeta / f"{medidor}.csv").open(encoding="utf-8") as archivo:
+        ruta = self._carpeta / f"{medidor}.csv"
+        logger.info("Leyendo %s", ruta)
+        with ruta.open(encoding="utf-8") as archivo:
             filas = (
                 Medicion(instante=datetime.fromisoformat(f["instante"]), potencia_kw=float(f["potencia_kw"]))
                 for f in csv.DictReader(archivo)
             )
-            return [m for m in filas if desde <= m.instante < hasta]
+            mediciones = [m for m in filas if desde <= m.instante < hasta]
+        logger.info("%d mediciones dentro del rango", len(mediciones))
+        return mediciones

@@ -8,6 +8,7 @@ from sqlalchemy.exc import OperationalError
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.domain.cargas.entities import EventoCarga, Medicion
 from src.infrastructure.fastapi.dependencies import get_identificar_cargas
+from src.infrastructure.settings.logger import logger
 from src.main import app
 
 T0 = datetime(2026, 9, 20)
@@ -25,7 +26,7 @@ class AgrupadorUnico:
 
 def test_identify_loads_devuelve_cargas() -> None:
     app.dependency_overrides[get_identificar_cargas] = lambda: IdentificarCargasUseCase(
-        RepoFalso(), AgrupadorUnico(), umbral_kw=60
+        RepoFalso(), AgrupadorUnico(), umbral_kw=60, logger=logger
     )
     try:
         r = TestClient(app).get(
@@ -57,7 +58,7 @@ class RepoCaido:
 
 def test_identify_loads_responde_503_si_la_base_no_esta_disponible() -> None:
     app.dependency_overrides[get_identificar_cargas] = lambda: IdentificarCargasUseCase(
-        RepoCaido(), AgrupadorUnico(), umbral_kw=60
+        RepoCaido(), AgrupadorUnico(), umbral_kw=60, logger=logger
     )
     try:
         r = TestClient(app).get(

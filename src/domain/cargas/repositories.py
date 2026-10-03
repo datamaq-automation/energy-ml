@@ -12,6 +12,16 @@ class MedicionRepository(Protocol):
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]: ...
 
 
+class Bitacora(Protocol):
+    """Registro de lo que hace el proceso (solo info, warning y error)."""
+
+    def info(self, msg: str, *args: object) -> None: ...
+
+    def warning(self, msg: str, *args: object) -> None: ...
+
+    def error(self, msg: str, *args: object) -> None: ...
+
+
 class AgrupadorEventos(Protocol):
     """Agrupa eventos por magnitud; devuelve una etiqueta por evento (-1 = ruido)."""
 

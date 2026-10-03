@@ -6,7 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import ValidationError
 
-from src.application.cargas.dtos.identificar_cargas import IdentificarCargasRequest, IdentificarCargasResponse
+from src.application.cargas.dtos.identificar_cargas import (
+    IdentificarCargasRequest,
+    IdentificarCargasResponse,
+)
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.infrastructure.fastapi.dependencies import get_identificar_cargas
 
