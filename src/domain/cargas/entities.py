@@ -55,3 +55,12 @@ class EstimacionUmbral:
 
     def es_confiable(self, separacion_minima: float) -> bool:
         return self.separacion >= separacion_minima
+
+
+@dataclass(frozen=True)
+class BarraHistograma:
+    """Cantidad de saltos |ΔP| que cayeron en [desde_kw, hasta_kw)."""
+
+    desde_kw: float
+    hasta_kw: float
+    cantidad: int

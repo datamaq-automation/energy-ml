@@ -36,6 +36,8 @@ def test_identify_loads_devuelve_cargas() -> None:
         body = r.json()
         assert body["eventos"] == 2
         assert body["cargas"] == [{"potencia_tipica_kw": 90.0, "encendidos": 1, "apagados": 1, "ciclos": 1}]
+        assert body["umbral"] == {"kw": 60.0, "automatico": False, "separacion": None, "confiable": None}
+        assert sum(b["cantidad"] for b in body["histograma"]) == 2
         invalido = TestClient(app).get(
             "/api/v1/identify-loads", params={"medidor": "X", "desde": "2026-09-21", "hasta": "2026-09-20"}
         )

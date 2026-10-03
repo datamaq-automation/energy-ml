@@ -76,3 +76,15 @@ def test_estimar_umbral_sin_variacion_no_estima() -> None:
 
     assert estimar_umbral(_serie([100, 100, 100])) is None
     assert estimar_umbral(_serie([100])) is None
+
+
+def test_histograma_reparte_hasta_el_percentil_99_y_junta_el_resto_al_final() -> None:
+    from src.domain.cargas.services import histograma
+
+    barras = histograma([float(v) for v in range(100)] + [10_000.0], barras=10)
+    assert len(barras) == 10
+    assert sum(b.cantidad for b in barras) == 101
+    assert barras[0].desde_kw == 0
+    assert barras[-1].hasta_kw == 99.0
+    assert barras[-1].cantidad >= 2  # 99 y el valor extremo caen en la última barra
+    assert histograma([]) == []

@@ -17,6 +17,14 @@
   <button>Identificar</button>
 </form>
 <p id="resumen" class="muted">Elegí un medidor y un rango.</p>
+<section id="saltos" hidden>
+  <h2>Saltos de potencia |ΔP|</h2>
+  <p class="muted">Cada barra cuenta cuántas veces la potencia cambió esa cantidad entre dos mediciones. A la izquierda, el ruido; a la derecha, los encendidos y apagados. La línea es el umbral que los separa.</p>
+  <div id="histo" class="histo"></div>
+  <div class="eje"><span>0 kW</span><span id="eje-max"></span></div>
+  <p id="umbral"></p>
+</section>
+<h2>Cargas identificadas</h2>
 <div id="cargas"></div>
 </main>
 </body>

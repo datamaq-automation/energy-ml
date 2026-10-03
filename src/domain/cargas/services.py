@@ -3,7 +3,13 @@
 from collections import defaultdict
 from itertools import pairwise
 
-from src.domain.cargas.entities import Carga, EstimacionUmbral, EventoCarga, Medicion
+from src.domain.cargas.entities import (
+    BarraHistograma,
+    Carga,
+    EstimacionUmbral,
+    EventoCarga,
+    Medicion,
+)
 
 
 def detectar_eventos(mediciones: list[Medicion], umbral_kw: float) -> list[EventoCarga]:
@@ -19,14 +25,35 @@ def detectar_eventos(mediciones: list[Medicion], umbral_kw: float) -> list[Event
     return eventos
 
 
+def saltos_kw(mediciones: list[Medicion]) -> list[float]:
+    """|ΔP| entre mediciones consecutivas (ordenadas por instante)."""
+    ordenadas = sorted(mediciones, key=lambda m: m.instante)
+    return [abs(b.potencia_kw - a.potencia_kw) for a, b in pairwise(ordenadas)]
+
+
+def histograma(valores: list[float], barras: int = 30) -> list[BarraHistograma]:
+    """Histograma de 0 al percentil 99; la última barra junta también los valores más grandes."""
+    if not valores or barras < 1:
+        return []
+    ordenados = sorted(valores)
+    limite = ordenados[int(0.99 * (len(ordenados) - 1))] or ordenados[-1] or 1.0
+    ancho = limite / barras
+    cantidades = [0] * barras
+    for v in ordenados:
+        cantidades[min(int(v / ancho), barras - 1)] += 1
+    return [
+        BarraHistograma(desde_kw=round(i * ancho, 1), hasta_kw=round((i + 1) * ancho, 1), cantidad=c)
+        for i, c in enumerate(cantidades)
+    ]
+
+
 def estimar_umbral(mediciones: list[Medicion]) -> EstimacionUmbral | None:
     """Elige el umbral |ΔP| con el método de Otsu: el corte que maximiza la varianza entre clases.
 
     Separa los saltos chicos (ruido: cargas que varían de a poco) de los grandes (encendidos y
     apagados). Devuelve None si no hay al menos dos valores distintos de |ΔP| para separar.
     """
-    ordenadas = sorted(mediciones, key=lambda m: m.instante)
-    saltos = sorted(abs(b.potencia_kw - a.potencia_kw) for a, b in pairwise(ordenadas))
+    saltos = sorted(saltos_kw(mediciones))
     n, total = len(saltos), sum(saltos)
     if n < 2 or saltos[0] == saltos[-1]:
         return None
