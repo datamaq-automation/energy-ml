@@ -2,6 +2,8 @@
 
 > **Material para docentes, con respuestas.** No se publica en la app: los alumnos trabajan con el [cuaderno del alumno](cuaderno-alumno.md), que se sirve en `/guia` y no tiene respuestas. Las respuestas de cada actividad del cuaderno están en la [sección 17](#17-respuestas-del-cuaderno-del-alumno). Como el repositorio es público, un alumno que lo clone puede leer este archivo: si eso importa, conviene guardar una copia fuera del repo.
 
+**Referencia pedagógica:** este proyecto es un caso de estudio del curso **"Procesamiento de Aprendizaje Automático"** (https://isftn199.com.ar/cursos/procesamiento-aprendizaje-automatico). Implementa conceptos de **Unidad 2 (Clasificación y evaluación)** y **Unidad 3 (Árboles de decisión, algoritmos de inducción)**.
+
 Esta guía recorre **todo el repositorio** con mirada de aula: qué hace el sistema, cómo lo hace, por qué quedó así y qué se puede aprender de cada parte. Todos los números salen de correr el sistema sobre los datos de `data/input/`.
 
 > **Cómo leerla.** Si es tu primera vez, seguí el orden. Si vas a dar una clase puntual, usá la [secuencia sugerida](#15-secuencia-sugerida-de-clases) y los [ejercicios](#14-ejercicios). Para ver el código en cualquier punto del historial: `git log --oneline` y `git checkout <hash>` (volvés con `git checkout main`).

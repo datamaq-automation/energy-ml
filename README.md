@@ -12,6 +12,18 @@ Este repositorio empezó como un clasificador de diabetes (Flask + SVC + Supabas
 
 En la planta piloto (UPP, 11-09 a 03-10-2026), con los valores por defecto aparece una carga ON/OFF de **~92 kW** en *planta_2_a* (412 encendidos y 380 apagados) y otra de **~88 kW** en *planta_2_b*. El análisis completo está en el informe NILM.
 
+## Contexto Pedagógico
+
+**Este proyecto es un caso de estudio práctico** del curso **"Procesamiento de Aprendizaje Automático"** en el Instituto Superior de Formación Técnica N° 199: https://isftn199.com.ar/cursos/procesamiento-aprendizaje-automatico
+
+El curso cubre desde fundamentos (terminal, Git, FastAPI) hasta conceptos avanzados (clasificación, evaluación de modelos, árboles de decisión). Energy-ml implementa varios de estos conceptos:
+
+- **Unidad 1, Cap 4:** API REST con FastAPI (`src/infrastructure/fastapi`)
+- **Unidad 2, Cap 5:** Evaluación de modelos con matriz de confusión
+- **Unidad 3, Cap 3:** Clustering como base para clasificación de cargas
+
+---
+
 ## Arquitectura
 
 Sigue la plantilla [`datamaq-automation/spec`](https://github.com/datamaq-automation/spec): FastAPI + Clean Architecture. La especificación está en [`docs/srs-spec-backend-fastapi.md`](docs/srs-spec-backend-fastapi.md).

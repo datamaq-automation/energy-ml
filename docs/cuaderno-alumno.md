@@ -2,6 +2,9 @@
 
 En este cuaderno vas a descubrir **qué equipos funcionan en una fábrica** mirando solamente el consumo total de un tablero eléctrico. Vas a usar un algoritmo de **aprendizaje no supervisado**, vas a medir qué tan bien funciona y vas a ver dónde falla.
 
+> **Este cuaderno es parte del curso "Procesamiento de Aprendizaje Automático"** de https://isftn199.com.ar/cursos/procesamiento-aprendizaje-automatico  
+> Aplica conceptos de **Unidad 2 (Machine Learning)** y **Unidad 3 (Programación Lógica)**: clustering DBSCAN, evaluación de modelos, y árboles de decisión para clasificación.
+
 > **Cómo trabajar.** Casi todas las actividades siguen tres pasos:
 > 1. **Predecí**: antes de correr nada, escribí qué esperás que pase y por qué.
 > 2. **Corré**: ejecutá el comando o mirá la página.
