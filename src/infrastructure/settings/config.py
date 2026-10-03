@@ -34,14 +34,14 @@ class Settings(BaseSettings):
     # Resultados del entrenamiento (no versionados)
     RESULTADOS_DIR: str = Field(default="data/output")
 
-    # NILM (valores iniciales derivados del análisis de la planta UPP)
+    # NILM
     # Umbral |ΔP| para detectar eventos. None = automático por medidor (método de Otsu);
     # un número (ej. NILM_UMBRAL_KW=60) lo fija a mano para comparar.
     NILM_UMBRAL_KW: float | None = Field(default=None)
     # Separación mínima (η de Otsu) para confiar en el umbral automático; una sola montaña da ~0.7
     NILM_SEPARACION_MINIMA: float = Field(default=0.8)
     # Radio de DBSCAN: qué tan parecidos tienen que ser dos saltos para ser la misma carga.
-    # None = automático por medidor (regla de Freedman–Diaconis); un número lo fija a mano.
+    # None = automático por medidor: el mayor entre Freedman–Diaconis y 2 × ruido; un número lo fija a mano.
     NILM_EPS_KW: float | None = Field(default=None)
     NILM_MIN_EVENTOS: int = Field(default=10)
     # Proporción mínima encendidos/apagados para considerar una carga ON/OFF (0.5 = uno a lo sumo el doble del otro)
