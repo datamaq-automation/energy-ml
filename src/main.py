@@ -3,10 +3,11 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import OperationalError
 
 from src.infrastructure.fastapi.routers.cargas import router as cargas_router
 from src.infrastructure.settings.config import get_settings
@@ -40,6 +41,11 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(cargas_router, prefix=settings.API_V1_PREFIX)
+
+    @app.exception_handler(OperationalError)
+    async def base_de_datos_no_disponible(request: Request, exc: OperationalError) -> JSONResponse:
+        logger.error("No se pudo conectar a la base de datos: %s", exc.orig)
+        return JSONResponse(status_code=503, content={"detail": "Base de datos no disponible"})
 
     app.mount("/static", StaticFiles(directory="web"), name="static")
 
