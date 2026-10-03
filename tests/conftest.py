@@ -9,7 +9,7 @@ import pytest
 
 try:
     from fastapi.testclient import TestClient
-    from httpx import ASGITransport, AsyncClient
+    from httpx2 import ASGITransport, AsyncClient
 
     from src.main import app
 

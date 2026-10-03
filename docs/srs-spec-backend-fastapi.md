@@ -94,7 +94,7 @@
 * **Configuración Centralizada:** `pydantic-settings` (`BaseSettings`, `SettingsConfigDict`).
 * **Persistencia:** archivos CSV con la librería estándar (`csv`); sin base de datos ni ORM.
 * **Broker & Mensajería (Opcional):** no aplica en esta etapa.
-* **Testing:** Pytest (`pytest-asyncio`, `httpx`).
+* **Testing:** Pytest (`pytest-asyncio`, `httpx2`).
 * **Linters & Tipado:** Ruff y Pyright (modo estricto).
 * **ML:** scikit-learn (DBSCAN) — solo en `infrastructure`; el dominio no depende de librerías externas.
 * **Bounded context:** `cargas` (`src/domain/cargas`, `src/application/cargas`, ...).
@@ -160,7 +160,7 @@
     ├── test_architecture.py                     # Validador AST del Guantelete de Restricciones
     ├── unit/                                    # Pruebas unitarias de domain y use_cases
     ├── integration/                             # Pruebas de integración de adaptadores (CSV, DBSCAN)
-    └── e2e/                                     # Pruebas de endpoints FastAPI (httpx.AsyncClient)
+    └── e2e/                                     # Pruebas de endpoints FastAPI (httpx2.AsyncClient)
 ```
 
 ### 4.3. Especificación de Configuración & Logging Centralizado
