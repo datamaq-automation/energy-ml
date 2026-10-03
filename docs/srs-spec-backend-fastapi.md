@@ -1,11 +1,11 @@
-# SRS-SPECS: {nombre_del_sistema_o_proyecto} — Single Source of Truth (SSOT) & Especificación del Sistema
+# SRS-SPECS: EnergyAI-NILM (Identificador de Cargas Energéticas) — Single Source of Truth (SSOT) & Especificación del Sistema
 
 > **Documento:** `srs-spec-backend-fastapi.md`  
-> **Versión:** `{version_documento_ej_1_0_0}`  
-> **Estado:** `{borrador_en_revision_aprobado}`  
-> **Fecha:** `{fecha_actual_o_release}`  
-> **Autor(es):** `{autor_o_equipo_responsable}`  
-> **Repositorio / Módulo:** `{organizacion_o_usuario}/{nombre_del_repositorio}`  
+> **Versión:** `0.1.0`  
+> **Estado:** `borrador`  
+> **Fecha:** `2026-10-02`  
+> **Autor(es):** `agustin (docente) + alumnos`  
+> **Repositorio / Módulo:** `agustin/DiabetesAI-ML` (evolución didáctica hacia energía)  
 
 > 💡 **Acompañamiento Pedagógico:** Antes de completar esta plantilla, se recomienda consultar la [Guía de Andamiaje Pedagógico y Metacognición](../docs/guia-andamiaje-proyectos.md) para reflexionar sobre los problemas de negocio, casos de borde y evitar la sobreingeniería.
 
@@ -14,23 +14,23 @@
 ## 1. Contexto Estratégico & Propuesta de Valor
 
 ### 1.1. Foco Estratégico & Alcance
-* **Mercado Objetivo:** `{definicion_de_industria_o_nicho_objetivo}`.
-* **Buyer Persona (Decisor / Cliente Ideal):** `{perfil_del_comprador_o_tomador_de_decision}`.
-* **User Persona (Operador / Usuario Final):** `{perfil_del_usuario_final_u_operador_del_sistema}`.
-* **Alcance Geográfico & Modalidad:** `{ej_Servicio_cloud_global_o_despliegue_on_premise_hibrido}`.
-* **Fuera de Alcance (*Out of Scope*):** `{lista_de_elementos_o_features_excluidas_en_esta_etapa}`.
+* **Mercado Objetivo:** Plantas industriales PyME con medidores de energía trifásicos ya instalados (caso piloto: planta UPP).
+* **Buyer Persona (Decisor / Cliente Ideal):** Gerente de planta / responsable de mantenimiento que busca reducir el costo energético.
+* **User Persona (Operador / Usuario Final):** Técnico de mantenimiento que consulta qué equipos estuvieron encendidos y cuándo.
+* **Alcance Geográfico & Modalidad:** Servicio en VPS propio que lee la base `datamaq_telemetry` (MySQL 8).
+* **Fuera de Alcance (*Out of Scope*):** Control de equipos, facturación, autenticación de usuarios, deep learning, tiempo real sub-minuto.
 
 ### 1.2. Pilares de Valor de la Solución
 | Pilar | Enfoque | Implementación en este Sistema |
 | :--- | :--- | :--- |
-| **1. Activos & Entorno Operativo** | Infraestructura física, dispositivos, hardware o fuentes de datos base. | `{descripcion_interaccion_con_activos_o_dispositivos}` |
-| **2. Software & Lógica de Negocio** | Captura, procesamiento en tiempo real, persistencia y APIs. | `{descripcion_del_flujo_de_datos_api_o_interfaz}` |
-| **3. Impacto Económico & ROI** | Optimización de costos, generación de ingresos o eficiencia operativa. | `{descripcion_del_impacto_economico_o_ahorro_esperado}` |
+| **1. Activos & Entorno Operativo** | Infraestructura física, dispositivos, hardware o fuentes de datos base. | Medidores 'Trafo arriba' y 'Trafo abajo': potencia cada 5 min (`telemetry_instantaneous`, en W) y contadores kWh cada ~42 s (`telemetry_energy`) |
+| **2. Software & Lógica de Negocio** | Captura, procesamiento en tiempo real, persistencia y APIs. | Lectura de series → detección de eventos ΔP → agrupamiento (DBSCAN) en cargas → API REST `/identify-loads` |
+| **3. Impacto Económico & ROI** | Optimización de costos, generación de ingresos o eficiencia operativa. | Atribuir consumo por equipo (ej. carga ON/OFF de ~90 kW, ≈19 ciclos/día) para detectar usos ociosos |
 
 ### 1.3. Coordinación Operativa, Roles & Seguridad
-* **Liderazgo Técnico / Responsable:** `{responsable_tecnico_o_lead_developer}`.
-* **Ventanas Operativas & Disponibilidad:** `{restricciones_horarias_y_ventanas_de_mantenimiento_o_soporte}`.
-* **Habilitaciones, Normativas & Seguridad:** `{certificaciones_normativas_legales_y_requisitos_de_acceso}`.
+* **Liderazgo Técnico / Responsable:** agustin.
+* **Ventanas Operativas & Disponibilidad:** Análisis histórico batch; sin SLA de producción (proyecto educativo).
+* **Habilitaciones, Normativas & Seguridad:** Acceso de solo lectura a la BD de telemetría; credenciales solo en `.env`.
 
 ---
 
@@ -39,15 +39,15 @@
 ### 2.1. Matriz del Business Model Canvas
 | Bloque Canvas | Definición Estratégica | Componentes Clave en el Software |
 | :--- | :--- | :--- |
-| **1. Socios Clave (KP)** | `{alianzas_proveedores_cloud_o_integradores_externos}` | `{integraciones_apis_o_pasarelas_asociadas}` |
-| **2. Actividades Clave (KA)** | `{procesamiento_core_desarrollo_soporte_operaciones}` | `{servicios_y_casos_de_uso_principales}` |
-| **3. Recursos Clave (KR)** | `{algoritmos_propiedad_intelectual_bases_de_datos_servidores}` | `{infraestructura_y_modelos_de_datos}` |
-| **4. Propuesta de Valor (VP)** | `{beneficio_unico_que_resuelve_el_problema_del_cliente}` | `{endpoints_publicos_dashboards_o_servicios}` |
-| **5. Relación con Clientes (CR)** | `{automatizada_autoservicio_soporte_dedicado_alertas}` | `{notificadores_webhooks_email_mensajeria}` |
-| **6. Canales de Distribución (CH)** | `{web_api_rest_mobile_brokers_de_mensajeria}` | `{routers_fastapi_controladores_y_suscriptores}` |
-| **7. Segmentos de Clientes (CS)** | `{tipos_de_clientes_o_audiencias_objetivo}` | `{roles_rbac_y_politicas_de_autorizacion}` |
-| **8. Estructura de Costos (CS)** | `{costos_cloud_licencias_mantenimiento_procesamiento}` | `{optimizacion_de_consultas_y_eficiencia_de_recursos}` |
-| **9. Fuentes de Ingresos (RS)** | `{suscripcion_saas_pago_por_uso_licencias_servicios}` | `{pasarelas_de_pago_o_gestion_de_suscripciones}` |
+| **1. Socios Clave (KP)** | Proveedor de medidores y VPS | Lectura de `datamaq_telemetry` |
+| **2. Actividades Clave (KA)** | Desagregación de consumo (NILM) | Casos de uso `DetectarEventos`, `IdentificarCargas` |
+| **3. Recursos Clave (KR)** | Series históricas de telemetría | Repositorio MySQL de mediciones |
+| **4. Propuesta de Valor (VP)** | Saber qué equipo consume sin instalar medidores por equipo | `GET /api/v1/identify-loads` |
+| **5. Relación con Clientes (CR)** | Informes y validación con personal de planta | Etiquetado manual de cargas (posterior) |
+| **6. Canales de Distribución (CH)** | API REST + vista web | Routers FastAPI |
+| **7. Segmentos de Clientes (CS)** | Plantas con medición trifásica | Un medidor = una serie |
+| **8. Estructura de Costos (CS)** | VPS existente | Consultas agregadas, sin GPU |
+| **9. Fuentes de Ingresos (RS)** | Fuera de alcance (proyecto educativo) | — |
 
 ### 2.2. Organigrama Operativo / Gobernanza de Agentes IA (Opcional)
 * **`agente-orquestador` / `agente-lead`:** Gobernanza general, alineación técnica y resolución de conflictos entre módulos.
@@ -57,27 +57,28 @@
 * **`agente-qa-calidad`:** Validación continua del Guantelete de Restricciones (`test_architecture.py`), Pyright y tests.
 
 ### 2.3. Escalera de Valor / Modelo de Conversión
-* **Nivel de Entrada (*Lead Magnet* / Tier Gratuito):** `{ej_Demo_publica_tier_gratuito_o_herramienta_de_evaluacion}`.
-* **Servicio Core (*Core Offering*):** `{ej_Plataforma_principal_funcionalidades_core_o_servicio_profesional}`.
-* **Nivel Avanzado (*Enterprise* / Retención):** `{ej_SLA_dedicado_analitica_avanzada_soporte_24_7}`.
+* **Nivel de Entrada (*Lead Magnet* / Tier Gratuito):** Informe NILM estático de una planta.
+* **Servicio Core (*Core Offering*):** API de identificación de cargas sobre la telemetría existente.
+* **Nivel Avanzado (*Enterprise* / Retención):** Etiquetado asistido de cargas y alertas por consumo anómalo.
 
 ---
 
 ## 3. Especificación de Requisitos de Software (SRS)
 
 ### 3.1. Requisitos Funcionales (FR)
-* **FR-01 - Ingesta y Validación de Datos:** El sistema debe procesar eventos/solicitudes de `{fuente_de_entrada}` validando estrictamente los schemas mediante Pydantic v2.
-* **FR-02 - Persistencia Transaccional:** El sistema debe almacenar las transacciones en `{motor_bd_ej_PostgreSQL_MySQL_SQLite}` mediante el patrón Repository tipado.
-* **FR-03 - Emisión de Eventos y Notificaciones:** El sistema debe emitir alertas/eventos asíncronos vía `{canales_ej_Webhooks_SMTP_MessageBroker}` cuando `{condicion_disparadora}`.
-* **FR-04 - Control de Acceso y Autorización:** El sistema debe restringir el acceso a los recursos mediante `{modelo_seguridad_ej_JWT_OAuth2_API_Keys}` y permisos basados en roles (`{roles_del_sistema}`).
+* **FR-01 - Ingesta y Validación de Datos:** El sistema debe leer series de potencia y energía de `datamaq_telemetry` por medidor y rango de fechas, validando estrictamente los schemas mediante Pydantic v2.
+* **FR-02 - Persistencia Transaccional:** El sistema debe almacenar las transacciones en MySQL 8 (lectura; resultados en tabla propia en etapa posterior) mediante el patrón Repository tipado.
+* **FR-03 - Emisión de Eventos y Notificaciones:** El sistema debe emitir alertas/eventos asíncronos vía (etapa posterior) webhook cuando una carga identificada supere su consumo típico.
+* **FR-04 - Control de Acceso y Autorización:** El sistema debe restringir el acceso a los recursos mediante API key (etapa posterior); en la etapa didáctica la API es local.
 * **FR-05 - Seguridad y Anti-Abuso:** El sistema debe implementar rate limiting, sanitización estricta de entradas y mitigación de vulnerabilidades OWASP (SQLi, XSS, SSRF).
-* **FR-06 - `{nombre_requisito_especifico_1}`:** El sistema debe `{descripcion_de_accion_y_resultado_esperado}`.
-* **FR-07 - `{nombre_requisito_especifico_2}`:** El sistema debe `{descripcion_de_accion_y_resultado_esperado}`.
+* **FR-06 - Detección de Eventos:** El sistema debe detectar cambios de estado como saltos |ΔP| entre muestras consecutivas mayores a un umbral configurable (por defecto 60 kW).
+* **FR-07 - Identificación de Cargas:** El sistema debe agrupar los eventos por magnitud (DBSCAN, `eps` y `min_samples` configurables) y devolver cada grupo como carga candidata con potencia típica y cantidad de encendidos/apagados.
+* **FR-08 - Validación de Unidades:** El sistema debe convertir la potencia de W a kW en el adaptador de datos; el dominio trabaja siempre en kW.
 
 ### 3.2. Requisitos No Funcionales (NFR)
-* **NFR-01 - Latencia y Rendimiento:** La latencia p95 en lecturas debe ser inferior a `{latencia_maxima_ms}` ms bajo condiciones normales de operación.
-* **NFR-02 - Concurrencia & Throughput:** Capacidad para procesar `{rps_o_mensajes_por_segundo}` `{solicitudes_o_mensajes_por_segundo}` concurrentes sin degradación.
-* **NFR-03 - Disponibilidad & Resiliencia:** SLA objetivo del `{sla_porcentaje_ej_99_9}`% con reconexión automática y degradación elegante ante caídas de dependencias externas.
+* **NFR-01 - Latencia y Rendimiento:** La latencia p95 en lecturas debe ser inferior a 2000 ms bajo condiciones normales de operación.
+* **NFR-02 - Concurrencia & Throughput:** Capacidad para procesar 5 solicitudes por segundo concurrentes sin degradación.
+* **NFR-03 - Disponibilidad & Resiliencia:** SLA objetivo del 95% con reconexión automática y degradación elegante ante caídas de dependencias externas.
 * **NFR-04 - Seguridad y Cifrado:** Cifrado en tránsito (TLS 1.3) y en reposo para datos sensibles; gestión de secretos aislada vía variables de entorno (`.env` protegido por `.gitignore`).
 * **NFR-05 - Conformidad Arquitectónica:** 100% de cumplimiento en pruebas automáticas del Guantelete AST (`tests/test_architecture.py`) en cada commit o PR.
 
@@ -91,10 +92,12 @@
 * **Framework Web:** FastAPI (asíncrono, OpenAPI autodocumentado).
 * **Validación & Schemas:** Pydantic v2 (`BaseModel`, `Field`, `ConfigDict`).
 * **Configuración Centralizada:** `pydantic-settings` (`BaseSettings`, `SettingsConfigDict`).
-* **ORM & Persistencia:** `{reemplazar_orm_ej_SQLAlchemy_2_0_SQLModel}` con soporte asíncrono.
-* **Broker & Mensajería (Opcional):** `{reemplazar_broker_ej_MQTT_Kafka_RabbitMQ_Redis}` con `{driver_broker_ej_aiokafka_paho_redis_asyncio}`.
+* **ORM & Persistencia:** SQLAlchemy 2.0 Core + PyMySQL (consultas parametrizadas, solo lectura).
+* **Broker & Mensajería (Opcional):** no aplica en esta etapa.
 * **Testing:** Pytest (`pytest-asyncio`, `httpx`).
 * **Linters & Tipado:** Ruff y Pyright (modo estricto).
+* **ML:** scikit-learn (DBSCAN) — solo en `infrastructure`; el dominio no depende de librerías externas.
+* **Bounded context:** `cargas` (`src/domain/cargas`, `src/application/cargas`, ...).
 
 ### 4.2. Estructura Canónica de Directorios (Screaming DDD + Clean Architecture)
 
