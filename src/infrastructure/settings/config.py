@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # Base de Datos
     DATABASE_URL: str = Field(default="mysql+pymysql://usuario:clave@127.0.0.1:3306/datamaq_telemetry")
 
+    # NILM (valores iniciales derivados del análisis de la planta UPP)
+    NILM_UMBRAL_KW: float = Field(default=60.0)
+    NILM_EPS_KW: float = Field(default=8.0)
+    NILM_MIN_EVENTOS: int = Field(default=10)
+
 
 @lru_cache
 def get_settings() -> Settings:

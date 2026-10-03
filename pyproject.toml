@@ -11,6 +11,8 @@ dependencies = [
     "pydantic-settings>=2.5.0",
     "sqlalchemy>=2.0",
     "pymysql>=1.1",
+    "scikit-learn>=1.5",
+    "numpy>=2.0",
 ]
 
 [project.optional-dependencies]
