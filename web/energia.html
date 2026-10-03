@@ -23,6 +23,10 @@
   <section class="paso">
     <h2><span class="num">1</span> Datos leídos</h2>
     <div class="kpis" id="kpi-datos"></div>
+    <p>Así se ve la potencia total del tablero. Cada <strong>escalón</strong> es un equipo que se prende (▲) o se apaga (▼); el color indica a qué carga lo asignó el sistema (gris: sin grupo).</p>
+    <div id="serie" class="serie"></div>
+    <p class="leyenda" id="leyenda-serie"></p>
+    <p class="muted" id="pista-dia" hidden>En un mes los escalones se amontonan. <button type="button" id="ver-dia" class="secundario">Ver un día</button> para verlos de cerca.</p>
     <details><summary>¿Qué significa esto?</summary>
       <p>El medidor registra la potencia total del tablero (la suma de todos los equipos) aproximadamente cada 5 minutos. La potencia media sirve de escala: una carga de 90 kW en un tablero de 200 kW de media es casi la mitad del consumo.</p>
     </details>
