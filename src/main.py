@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.infrastructure.fastapi.routers.cargas import router as cargas_router
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
 
@@ -35,6 +36,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(cargas_router, prefix=settings.API_V1_PREFIX)
 
     @app.get("/health", tags=["Health"])
     async def health_check() -> dict[str, str]:

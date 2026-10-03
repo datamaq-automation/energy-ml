@@ -1,0 +1,43 @@
+"""tests/e2e/test_identify_loads.py — Endpoint /identify-loads con dependencias sustituidas."""
+
+from datetime import datetime, timedelta
+
+from fastapi.testclient import TestClient
+
+from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
+from src.domain.cargas.entities import EventoCarga, Medicion
+from src.infrastructure.fastapi.dependencies import get_identificar_cargas
+from src.main import app
+
+T0 = datetime(2026, 9, 20)
+
+
+class RepoFalso:
+    def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
+        return [Medicion(T0 + timedelta(minutes=5 * i), p) for i, p in enumerate([120, 210, 120])]
+
+
+class AgrupadorUnico:
+    def agrupar(self, eventos: list[EventoCarga]) -> list[int]:
+        return [0] * len(eventos)
+
+
+def test_identify_loads_devuelve_cargas() -> None:
+    app.dependency_overrides[get_identificar_cargas] = lambda: IdentificarCargasUseCase(
+        RepoFalso(), AgrupadorUnico(), umbral_kw=60
+    )
+    try:
+        r = TestClient(app).get(
+            "/api/v1/identify-loads",
+            params={"medidor": "Trafo arriba", "desde": "2026-09-20T00:00", "hasta": "2026-09-21T00:00"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["eventos"] == 2
+        assert body["cargas"] == [{"potencia_tipica_kw": 90.0, "encendidos": 1, "apagados": 1, "ciclos": 1}]
+        invalido = TestClient(app).get(
+            "/api/v1/identify-loads", params={"medidor": "X", "desde": "2026-09-21", "hasta": "2026-09-20"}
+        )
+        assert invalido.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
