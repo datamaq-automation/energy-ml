@@ -14,7 +14,9 @@ def carpetas(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Pat
     entrada.mkdir()
     filas = [
         f"2026-09-20T{i // 12:02d}:{5 * (i % 12):02d}:00,{kw}"
-        for i, kw in enumerate(120 + (0, 1, 2, 1)[j % 4] + (90 if (j // 3) % 2 else 0) for j in range(72))
+        for i, kw in enumerate(
+            120 + (0, 1, 2, 1)[j % 4] + (90 if (j // 3) % 2 else 0) for j in range(72)
+        )
     ]
     (entrada / "planta.csv").write_text(
         "instante,potencia_kw\n" + "\n".join(filas) + "\n", encoding="utf-8"
@@ -43,3 +45,36 @@ def test_train_no_procesa_medidores_desconocidos(
     monkeypatch.setattr("sys.argv", ["train", "nada"])
     entrenar()
     assert not salida.exists()
+
+
+def test_train_acepta_parametros_nilm_por_argumento(
+    carpetas: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    _, salida = carpetas
+    monkeypatch.setattr(
+        "sys.argv",
+        ["train", "planta", "--umbral", "50", "--min-eventos", "4", "--balance-minimo", "0.9"],
+    )
+    with caplog.at_level("INFO", logger="backend-api"):
+        entrenar()
+    assert "Umbral fijo por configuración: 50.0 kW" in caplog.text
+    assert "Mínimo fijo por configuración: 4 eventos" in caplog.text
+    assert (salida / "cargas_planta.csv").exists()
+    assert get_settings().NILM_UMBRAL_KW is None  # el argumento no modifica la configuración global
+
+
+@pytest.mark.parametrize(
+    "argumentos",
+    [
+        ["--umbral", "0"],
+        ["--min-eventos", "0"],
+        ["--separacion-minima", "1.5"],
+        ["--balance-minimo", "-1"],
+    ],
+)
+def test_train_rechaza_parametros_fuera_de_rango(
+    carpetas: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, argumentos: list[str]
+) -> None:
+    monkeypatch.setattr("sys.argv", ["train", *argumentos])
+    with pytest.raises(SystemExit):
+        entrenar()

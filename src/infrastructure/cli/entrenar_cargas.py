@@ -4,6 +4,8 @@ Uso:
     ./run.sh train                                   # todos los medidores, todos los datos
     ./run.sh train planta_2_a                        # un medidor
     ./run.sh train planta_2_a --desde 2026-09-15 --hasta 2026-09-22
+    ./run.sh train planta_2_b --umbral 60                # fija un parámetro (el resto sigue automático)
+    ./run.sh train --help                                # todas las opciones
 """
 
 import argparse
@@ -22,6 +24,36 @@ from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 
 TODO_EL_RANGO = (datetime(2000, 1, 1), datetime(2100, 1, 1))
 
+# Opción de la CLI → variable de Settings. Lo que se pasa por argumento tiene prioridad.
+PARAMETROS_NILM = {
+    "umbral": "NILM_UMBRAL_KW",
+    "radio": "NILM_EPS_KW",
+    "min_eventos": "NILM_MIN_EVENTOS",
+    "separacion_minima": "NILM_SEPARACION_MINIMA",
+    "balance_minimo": "NILM_BALANCE_MINIMO",
+}
+
+
+def _positivo(texto: str) -> float:
+    valor = float(texto)
+    if valor <= 0:
+        raise argparse.ArgumentTypeError(f"tiene que ser mayor que 0 (recibido {texto})")
+    return valor
+
+
+def _entero_positivo(texto: str) -> int:
+    valor = int(texto)
+    if valor < 1:
+        raise argparse.ArgumentTypeError(f"tiene que ser al menos 1 (recibido {texto})")
+    return valor
+
+
+def _proporcion(texto: str) -> float:
+    valor = float(texto)
+    if not 0 <= valor <= 1:
+        raise argparse.ArgumentTypeError(f"tiene que estar entre 0 y 1 (recibido {texto})")
+    return valor
+
 
 def leer_argumentos() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -36,12 +68,48 @@ def leer_argumentos() -> argparse.Namespace:
     parser.add_argument(
         "--hasta", type=datetime.fromisoformat, default=TODO_EL_RANGO[1], help="ej. 2026-09-22"
     )
+    nilm = parser.add_argument_group(
+        "parámetros NILM",
+        "Sin estas opciones se usa config.py (umbral, radio y mínimo son automáticos). Criterios para elegirlos: docs/guia-docente.md, §6 y §7.",
+    )
+    nilm.add_argument(
+        "--umbral", type=_positivo, metavar="KW", help="umbral |ΔP| fijo (por defecto: Otsu)"
+    )
+    nilm.add_argument(
+        "--radio",
+        type=_positivo,
+        metavar="KW",
+        help="radio de DBSCAN fijo (por defecto: F–D / 2 × ruido)",
+    )
+    nilm.add_argument(
+        "--min-eventos",
+        type=_entero_positivo,
+        metavar="N",
+        help="eventos mínimos por carga (por defecto: uno por día)",
+    )
+    nilm.add_argument(
+        "--separacion-minima",
+        type=_proporcion,
+        metavar="η",
+        help="η mínimo para confiar en el umbral (0 a 1)",
+    )
+    nilm.add_argument(
+        "--balance-minimo",
+        type=_proporcion,
+        metavar="P",
+        help="proporción ciclos/mayor para ser ON/OFF (0 a 1)",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = leer_argumentos()
-    settings = get_settings()
+    cambios = {
+        var: getattr(args, opcion)
+        for opcion, var in PARAMETROS_NILM.items()
+        if getattr(args, opcion) is not None
+    }
+    settings = get_settings().model_copy(update=cambios)
     entrada, salida = Path(settings.MEDICIONES_CSV_DIR), Path(settings.RESULTADOS_DIR)
     repositorio = CsvMedicionRepository(entrada)
     resultados: CargaRepository = CsvCargaRepository(salida)
