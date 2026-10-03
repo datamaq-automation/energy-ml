@@ -28,3 +28,6 @@ htmlcov/
 *.swo
 # Scripts locales de extracción (no versionados)
 tmp/
+# Resultados del entrenamiento: los genera cada alumno
+data/output/*
+!data/output/.gitkeep
