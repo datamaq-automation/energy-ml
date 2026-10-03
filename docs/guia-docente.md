@@ -1,5 +1,7 @@
 # Guía docente — energy-ml
 
+> **Material para docentes, con respuestas.** No se publica en la app: los alumnos trabajan con el [cuaderno del alumno](cuaderno-alumno.md), que se sirve en `/guia` y no tiene respuestas. Las respuestas de cada actividad del cuaderno están en la [sección 17](#17-respuestas-del-cuaderno-del-alumno). Como el repositorio es público, un alumno que lo clone puede leer este archivo: si eso importa, conviene guardar una copia fuera del repo.
+
 Esta guía recorre **todo el repositorio** con mirada de aula: qué hace el sistema, cómo lo hace, por qué quedó así y qué se puede aprender de cada parte. Todos los números salen de correr el sistema sobre los datos de `data/input/`.
 
 > **Cómo leerla.** Si es tu primera vez, seguí el orden. Si vas a dar una clase puntual, usá la [secuencia sugerida](#15-secuencia-sugerida-de-clases) y los [ejercicios](#14-ejercicios). Para ver el código en cualquier punto del historial: `git log --oneline` y `git checkout <hash>` (volvés con `git checkout main`).
@@ -59,6 +61,8 @@ No hace falta base de datos, cuentas ni `.env`: los datos están en el repo.
 | `./run.sh start` | Servidor web (API + páginas) |
 | `./run.sh dev` | Igual, pero se reinicia solo al editar el código |
 | `./run.sh train [medidores] [--desde F] [--hasta F] [parámetros]` | Identifica cargas por consola y guarda los resultados en `data/output/`. Los parámetros NILM se pueden pasar como argumentos (ver §10); `./run.sh train --help` los lista |
+| `./run.sh simulate [--nombre N] [--dias D] [--ruido KW] [--semilla S]` | Genera un tablero simulado con equipos conocidos y su verdad (§4) |
+| `./run.sh evaluate [medidor] [parámetros]` | Compara lo identificado con la verdad: sensibilidad por equipo, precisión, cargas inventadas |
 | `./run.sh test` | Toda la suite de tests |
 | `./run.sh gauntlet` | Solo las reglas de arquitectura |
 | `./run.sh audit` | Busca código muerto y "componentes Dios" |
@@ -75,6 +79,7 @@ No hace falta base de datos, cuentas ni `.env`: los datos están en el repo.
 | :--- | :--- |
 | `data/input/planta_2_a.csv` | Tablero "arriba" de una planta papelera (fuerza motriz, preparación de pasta) |
 | `data/input/planta_2_b.csv` | Tablero "abajo" de la misma planta (máquina papelera continua) |
+| `data/input/sintetico.csv` | Tablero **simulado** con tres equipos conocidos (90, 40 y 15 kW). Su verdad está en `data/verdad/sintetico.csv` |
 
 ```
 instante,potencia_kw
@@ -315,6 +320,8 @@ Muestra los 4 pasos con números grandes y una frase cada uno; el detalle está 
 | `histograma` | 30 barras `{desde_kw, hasta_kw, cantidad}` de \|ΔP\| (de 0 al percentil 99; la última junta el resto) |
 | `eventos`, `encendidos`, `apagados`, `eventos_sin_grupo` | Paso 3 |
 | `agrupamiento` | `{radio_kw, radio_automatico, min_eventos, min_eventos_automatico}` — paso 3 |
+| `serie` | `[{instante, potencia_kw}]` — la señal, para el gráfico del paso 1 |
+| `detalle_eventos` | `[{instante, delta_kw, carga_kw}]` — cada evento con la carga a la que se asignó (`null` si quedó sin grupo) |
 | `cargas` | Paso 4: `{potencia_tipica_kw, encendidos, apagados, ciclos, ciclos_por_dia, on_off}` |
 
 Un medidor inexistente responde **404** (y la API nunca lee archivos fuera de `data/input/`: pedir `../.env` también da 404).
@@ -394,13 +401,16 @@ El proyecto usa **Clean Architecture**: el centro (las reglas de NILM) no conoce
 
 | Capa | Archivo | Qué tiene |
 | :--- | :--- | :--- |
-| Dominio | `src/domain/cargas/entities.py` | `Medicion`, `EventoCarga`, `Carga` (con `es_on_off`), `EstimacionUmbral`, `BarraHistograma` |
+| Dominio | `src/domain/cargas/simulacion.py` | `simular_tablero`: base + ruido + equipos ON/OFF, reproducible con semilla |
+| | `src/domain/cargas/evaluacion.py` | `evaluar`: sensibilidad por equipo, precisión, cargas inventadas |
+| | `src/domain/cargas/entities.py` | `Medicion`, `EventoCarga`, `Carga` (con `es_on_off`), `EstimacionUmbral`, `BarraHistograma` |
 | | `src/domain/cargas/services.py` | Funciones puras: `saltos_kw`, `detectar_eventos`, `estimar_umbral` (Otsu), `nivel_de_ruido`, `estimar_radio` (F–D), `estimar_min_eventos`, `histograma`, `resumir_cargas` |
 | | `src/domain/cargas/repositories.py` | **Puertos** (interfaces): `MedicionRepository`, `AgrupadorEventos`, `CargaRepository`, `Bitacora` |
 | Aplicación | `src/application/cargas/use_cases/identificar_cargas.py` | Orquesta los 4 pasos, decide umbral/radio automáticos o fijos, registra en el log |
 | | `src/application/cargas/dtos/identificar_cargas.py` | Lo que entra y sale (Pydantic) |
 | Infraestructura | `src/infrastructure/csv/medicion_repository.py` | Lee `data/input/<medidor>.csv` (y rechaza nombres que no existan) |
 | | `src/infrastructure/csv/carga_repository.py` | Escribe `data/output/cargas_<medidor>.csv` |
+| | `src/infrastructure/csv/verdad_repository.py` | Lee y escribe la verdad de los tableros simulados (`data/verdad/`) |
 | | `src/infrastructure/sklearn/dbscan_agrupador.py` | DBSCAN detrás del puerto `AgrupadorEventos` |
 | | `src/infrastructure/fastapi/` | Endpoint (`routers/cargas.py`) y armado de dependencias (`dependencies.py`) |
 | | `src/infrastructure/cli/entrenar_cargas.py` | `./run.sh train` |
@@ -469,6 +479,10 @@ El repo empezó como un clasificador de diabetes y se transformó **con commits 
 | `9064cd8` | Radio automático (F–D / 2 × ruido) | Parámetros con sentido físico |
 | `8ff09b1` | Mínimo de eventos automático (uno por día) | Criterios que no dependen del largo del rango |
 | `85addfc` | Parámetros NILM por argumento en `./run.sh train` | Experimentar sin tocar código |
+| `c88d64e` | Gráfico de la potencia en el tiempo | Ver la señal antes de abstraerla |
+| `76247ac` | Tablero simulado con equipos conocidos | Datos sintéticos como experimento controlado |
+| `faed83e` | Evaluación contra la verdad | Medir el error: sensibilidad y precisión |
+| `552f33b` | El simulador respeta la frecuencia pedida | Verificar los datos sintéticos también |
 
 ### Decisiones y alternativas descartadas
 
@@ -523,8 +537,19 @@ Ordenados de menor a mayor dificultad. Los resultados esperados se verificaron c
 
 ## 15. Secuencia sugerida de clases
 
-| Clase | Tema | Material |
-| :--- | :--- | :--- |
+Pensada para nivel terciario, con clases de ~2 horas. Las actividades son las del [cuaderno del alumno](cuaderno-alumno.md); los ejercicios (§14) quedan como práctica adicional o evaluación.
+
+| Clase | Tema | Cuaderno | Esta guía |
+| :--- | :--- | :--- | :--- |
+| 1 | El problema y la señal | §1–3, actividad 1 | §2, §4, §8 |
+| 2 | Del salto al evento: Otsu a mano y el histograma | §4, actividades 2 y 3 | §5, §6 |
+| 3 | Agrupar sin etiquetas: DBSCAN, radio y mínimo | §5, actividad 4 | §7 |
+| 4 | Validar sin respuestas: reglas de decisión | §6, actividad 5 | §6, §7, §8 |
+| 5 | Medir el error con datos simulados | §7, actividades 6 a 9 | §17 |
+| 6 | Cómo está construido: arquitectura y tests | §8, actividad 10 | §11, §12, §13 |
+| 7 | Cierre y puente al aprendizaje supervisado | §9 | §5 ("¿es ML?") |
+
+--- | :--- | :--- |
 | 1 | El problema NILM y los datos | §2, §4, página web; ejercicio 1 |
 | 2 | Del salto al evento: umbral, histograma, Otsu | §5, §6; ejercicios 2, 3 y 7 |
 | 3 | Clustering no supervisado: DBSCAN y su radio | §5, §7; ejercicios 4 y 5 |
@@ -557,3 +582,91 @@ Ordenados de menor a mayor dificultad. Los resultados esperados se verificaron c
 | **Puerto / adaptador** | Interfaz que define el dominio / implementación concreta en infraestructura |
 | **Inyección de dependencias** | Pasarle a un objeto lo que necesita en vez de que lo cree él |
 | **Commit atómico** | Un commit = un cambio lógico completo, que se entiende solo |
+| **Sensibilidad** | De los eventos que ocurrieron, qué fracción se detectó y se asignó al equipo correcto |
+| **Precisión** | De los eventos detectados, qué fracción corresponde a algo que pasó |
+| **Verdad (ground truth)** | Lo que realmente pasó; solo se conoce en los datos simulados |
+
+---
+
+## 17. Respuestas del cuaderno del alumno
+
+Todas se obtuvieron corriendo el sistema con los datos del repositorio. Los tiempos son orientativos para nivel terciario.
+
+### Actividad 1 — Mirar la señal (20 min)
+- En el 20-09 se ve una base de ~260 kW durante el turno (más baja de noche) con **pulsos de ~92 kW**, unos 19 en el día: más o menos **uno por hora**, bastante regulares.
+- El salto distinto es una **caída grande al final del día** (~212 kW): la planta que para. El sistema la agrupa como "carga" de ~212 kW con 0 encendidos y 3 apagados, y la marca dudosa.
+- En el mes no se distinguen los escalones porque hay ~800 eventos en el ancho de la pantalla: cada píxel junta varias horas.
+- **Error común**: confundir la variación lenta de la base con eventos. Preguntar: "¿eso pasa de una medición a la siguiente o en varias horas?".
+
+### Actividad 2 — Otsu a mano (30 min)
+1. `5, 6, 4, 50, 52, 5, 48, 6` → umbral **27 kW** (entre 6 y 48), η = **1,00**.
+2. `5, 15, 25, 35, 45, 55` → umbral **30 kW**, η = **0,77**: no hay dos grupos, los valores están repartidos parejo. Es el caso "una sola montaña": η por debajo de 0,8.
+3. La línea es `varianza_entre = peso_ruido * (1 - peso_ruido) * (media_ruido - media_eventos) ** 2`.
+- **Criterio**: que expliquen *por qué* gana el corte (grupos parejos y medias lejanas), no solo que lleguen al número.
+
+### Actividad 3 — El histograma (20 min)
+- `planta_2_a`: dos montañas, valle entre ~30 y ~70 kW, umbral automático 51,3 kW (η = 0,87).
+- `planta_2_b`: el ruido baja de a poco, no hay valle; aviso de umbral poco confiable (η = 0,71).
+- Predicción con 60 kW: la carga **sube** (de ~75 a ~88 kW), porque se dejan afuera saltos de ruido de 46–60 kW que corrían el promedio para abajo.
+
+### Actividad 4 — Radio y mínimo (20 min)
+- `planta_2_a`: radio automático 10,76 kW (ganó el piso de **2 × ruido**, con ruido = 5,4 kW), mínimo 21 eventos.
+- Con `--radio 2`: los eventos sin grupo suben de 37 a **121**, y la carga queda en ~92,3 kW con menos ciclos (353 contra 388): el radio chico deja afuera eventos legítimos.
+- En una semana el mínimo baja a **7**: con menos días, un equipo real junta menos eventos.
+
+### Actividad 5 — Reglas de decisión (25 min)
+1. ~222 kW con **2 encendidos y 18 apagados**; el sistema la marca "probablemente no es una sola carga ON/OFF".
+2. Explicaciones aceptables: arranque **escalonado** (se prende en varios saltos chicos que no superan el umbral y se apaga de golpe); **paradas de planta** (varios equipos se apagan juntos); un equipo que se apaga por una protección. Verificación: buscar en el CSV los instantes de esos apagados y mirar qué pasa antes (¿la potencia subió de a poco?).
+3. Proporción de la carga de ~91 kW: 388 / 426 = **0,91**. Con `--balance-minimo 0.95` pasa a **dudosa**: una regla demasiado estricta descarta una carga real.
+4. Para un día conviene **bajarlo** (0,3–0,4): con pocos ciclos, una carga real puede quedar desbalanceada por azar (ver §7, tabla de la simulación).
+
+### Actividad 6 — ¿Cuántos equipos encuentra? (20 min)
+Con el umbral automático (47,6 kW, η = 0,91):
+
+| | 90 kW | 40 kW | 15 kW |
+| :--- | :--- | :--- | :--- |
+| Sensibilidad | **99 %** (~88,6 kW) | 0 % | 0 % |
+
+Precisión 100 %, sin cargas inventadas. El umbral queda **por encima de 40 kW**: los eventos de los equipos B y C casi no se detectan. Los pocos que sí (33 y 98) son momentos en que dos equipos cambian juntos.
+
+### Actividad 7 — Buscar un umbral (25 min)
+
+| Umbral | 90 kW | 40 kW | 15 kW | Precisión |
+| :--- | :--- | :--- | :--- | :--- |
+| 30 kW | 99 % (pero estimada en ~81 kW) | 0 % (166 detectados) | 0 % | 100 % |
+| 10 kW | **0 %** | 90 % (estimada en ~47 kW) | 0 % (973 detectados) | 96 % |
+
+- Con 30 kW, los eventos de 40 kW **se detectan pero se mezclan** con los de 90 kW en un solo grupo de ~81 kW.
+- Con 10 kW, DBSCAN encadena todo: se pierde el equipo de 90 kW.
+- **Ningún umbral solo** encuentra los tres (probado de 10 a 40 kW).
+
+### Actividad 8 — Umbral y radio (30 min)
+
+| Umbral | Radio | 90 kW | 40 kW | 15 kW | Precisión |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 30 | 5 | 97 % | **81 %** | 0 % | 100 % |
+| 10 | 3 | **96 %** | **79 %** | **74 %** | 96 % |
+| 10 | 2 | 95 % | 70 % | 74 % | 96 % |
+
+- Achicar el radio **separa** grupos (corta los "puentes").
+- La combinación que encuentra los tres es **umbral 10 + radio 3**. El radio automático (≈ 2 × ruido) es demasiado generoso cuando hay equipos de tamaños cercanos.
+- **Lo central de la actividad**: la combinación se encontró **comparando con la verdad**. En `planta_2_a` no se puede hacer: para ajustar hace falta saber la respuesta, es decir, **datos etiquetados**. Es el argumento para pasar a supervisado.
+
+### Actividad 9 — Tu propio tablero (20 min)
+- Semilla 7: resultados casi iguales (90 kW al 98 %; 40 y 15 kW no encontradas). El comportamiento no depende de una semilla en particular.
+- Ruido de 8 kW: el umbral sube apenas (50 kW, η = 0,87) y el resultado es el mismo: el de 90 kW se sigue encontrando (99 %), los otros no.
+- **Hallazgo clave para discutir**: con los parámetros automáticos, el sistema solo encuentra los equipos de **más de la mitad del más grande**. Otsu corta cerca de la mitad del equipo mayor, así que todo lo que esté por debajo queda como "ruido".
+  - 150, 60 y 25 kW (ruido 2 kW): solo encuentra el de 150 (97 %), umbral 74 kW. Un tablero "bien separado" **no** alcanza.
+  - 90 y 60 kW o 90 y 70 kW (ruido 2 kW): encuentra los dos (88–97 %), umbral ~43 kW.
+  - Para que encuentre todo, los equipos tienen que estar entre la mitad y el total del más grande. Si un alumno llega a esta regla por su cuenta, la actividad cumplió su objetivo.
+
+### Actividad 10 — Arquitectura (40 min)
+1. `services.py` no importa librerías externas para que las reglas se puedan probar y entender solas, y para poder cambiar sklearn o el formato de archivos sin tocarlas.
+2. `JsonCargaRepository`: un archivo nuevo en `src/infrastructure/` (o `json/`), una línea en `entrenar_cargas.py` y su test. **Nada en `src/domain/`**.
+3. Falla `tests/test_god_components.py::test_no_critical_god_functions`. Es útil porque frena funciones que nadie va a poder revisar ni testear, antes de que lleguen a `main`.
+
+### Cierre — Hacia lo supervisado (discusión)
+- La verdad tiene **etiquetas** (qué equipo produjo cada evento); DBSCAN solo tenía tamaños.
+- En una fábrica real las pondría alguien de mantenimiento: anotar cuándo arranca cada equipo, o instalar un medidor temporal en un equipo.
+- Features útiles: hora del día, duración encendido, forma del salto (de golpe o en rampa), potencia reactiva, corriente por fase.
+- Modelo: un clasificador (árbol de decisión, random forest, k vecinos) que aprenda "evento → equipo".
