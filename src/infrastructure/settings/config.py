@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
 
     # Base de Datos
-    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./app.db")
+    DATABASE_URL: str = Field(default="mysql+pymysql://usuario:clave@127.0.0.1:3306/datamaq_telemetry")
 
 
 @lru_cache
