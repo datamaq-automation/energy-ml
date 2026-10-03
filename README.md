@@ -19,7 +19,7 @@ Sigue la plantilla [`datamaq-automation/spec`](https://github.com/datamaq-automa
 ```
 src/domain/cargas/            Medicion, EventoCarga, Carga · detectar_eventos, resumir_cargas · puertos
 src/application/cargas/       IdentificarCargasUseCase + DTOs
-src/infrastructure/csv        CsvMedicionRepository (data/input/*.csv)
+src/infrastructure/csv        CsvMedicionRepository (lee data/input/) · CsvCargaRepository (escribe data/output/)
 src/infrastructure/sklearn    DbscanAgrupador
 src/infrastructure/fastapi    GET /api/v1/identify-loads
 web/energia.html              Vista servida en /

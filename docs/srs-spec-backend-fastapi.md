@@ -146,7 +146,7 @@
 │   │   │   ├── routers/                         # Endpoints REST delgados (Thin Controllers)
 │   │   │   └── dependencies.py                  # Inyección de dependencias (Depends)
 │   │   ├── cli/                                 # Mecanismo de entrega por consola (./run.sh train)
-│   │   ├── csv/                                 # Persistencia concreta: CsvMedicionRepository
+│   │   ├── csv/                                 # Persistencia: CsvMedicionRepository, CsvCargaRepository
 │   │   ├── sklearn/                             # ML: DbscanAgrupador
 │   │   ├── {broker_driver_dir}/                 # Daemons/suscriptores para mensajería (si aplica)
 │   │   └── settings/                            # Configuración y Logging Centralizado

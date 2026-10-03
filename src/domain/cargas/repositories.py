@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Protocol
 
-from src.domain.cargas.entities import EventoCarga, Medicion
+from src.domain.cargas.entities import Carga, EventoCarga, Medicion
 
 
 class MedicionRepository(Protocol):
@@ -26,3 +26,9 @@ class AgrupadorEventos(Protocol):
     """Agrupa eventos por magnitud; devuelve una etiqueta por evento (-1 = ruido)."""
 
     def agrupar(self, eventos: list[EventoCarga]) -> list[int]: ...
+
+
+class CargaRepository(Protocol):
+    """Destino de las cargas identificadas de cada medidor."""
+
+    def guardar(self, medidor: str, cargas: list[Carga]) -> None: ...

@@ -7,12 +7,14 @@ Uso:
 """
 
 import argparse
-import csv
 from datetime import datetime
 from pathlib import Path
 
 from src.application.cargas.dtos.identificar_cargas import IdentificarCargasRequest
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
+from src.domain.cargas.entities import Carga
+from src.domain.cargas.repositories import CargaRepository
+from src.infrastructure.csv.carga_repository import CsvCargaRepository
 from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import describir_nilm, get_settings
 from src.infrastructure.settings.logger import logger
@@ -37,20 +39,12 @@ def leer_argumentos() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def guardar(salida: Path, medidor: str, cargas: list[tuple[float, int, int, int]]) -> Path:
-    destino = salida / f"cargas_{medidor}.csv"
-    with destino.open("w", newline="", encoding="utf-8") as archivo:
-        escritor = csv.writer(archivo)
-        escritor.writerow(["potencia_tipica_kw", "encendidos", "apagados", "ciclos"])
-        escritor.writerows(cargas)
-    return destino
-
-
 def main() -> None:
     args = leer_argumentos()
     settings = get_settings()
     entrada, salida = Path(settings.MEDICIONES_CSV_DIR), Path(settings.RESULTADOS_DIR)
     repositorio = CsvMedicionRepository(entrada)
+    resultados: CargaRepository = CsvCargaRepository(salida)
     caso_de_uso = IdentificarCargasUseCase(
         mediciones=repositorio,
         agrupador=DbscanAgrupador(
@@ -74,7 +68,6 @@ def main() -> None:
         return
     medidores = args.medidores or disponibles
 
-    salida.mkdir(parents=True, exist_ok=True)
     logger.info(describir_nilm(settings))
     logger.info(
         "Entrenando con %d de %d medidores de %s",
@@ -86,15 +79,8 @@ def main() -> None:
         r = caso_de_uso.execute(
             IdentificarCargasRequest(medidor=medidor, desde=args.desde, hasta=args.hasta)
         )
-        destino = guardar(
-            salida,
-            medidor, [(c.potencia_tipica_kw, c.encendidos, c.apagados, c.ciclos) for c in r.cargas]
-        )
-        logger.info(
-            "%s: %d cargas guardadas en %s",
-            medidor,
-            len(r.cargas),
-            destino,
+        resultados.guardar(
+            medidor, [Carga(c.potencia_tipica_kw, c.encendidos, c.apagados) for c in r.cargas]
         )
 
 
