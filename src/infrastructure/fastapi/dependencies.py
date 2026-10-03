@@ -24,4 +24,5 @@ def get_identificar_cargas() -> IdentificarCargasUseCase:
         umbral_kw=settings.NILM_UMBRAL_KW,
         logger=logger,
         balance_minimo=settings.NILM_BALANCE_MINIMO,
+        separacion_minima=settings.NILM_SEPARACION_MINIMA,
     )

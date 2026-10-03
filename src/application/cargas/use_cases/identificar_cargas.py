@@ -7,7 +7,7 @@ from src.application.cargas.dtos.identificar_cargas import (
 )
 from src.domain.cargas.entities import Carga, EventoCarga, Medicion
 from src.domain.cargas.repositories import AgrupadorEventos, Bitacora, MedicionRepository
-from src.domain.cargas.services import detectar_eventos, resumir_cargas
+from src.domain.cargas.services import detectar_eventos, estimar_umbral, resumir_cargas
 
 
 class IdentificarCargasUseCase:
@@ -15,10 +15,12 @@ class IdentificarCargasUseCase:
         self,
         mediciones: MedicionRepository,
         agrupador: AgrupadorEventos,
-        umbral_kw: float,
+        umbral_kw: float | None,
         logger: Bitacora,
         balance_minimo: float = 0.5,
+        separacion_minima: float = 0.8,
     ) -> None:
+        self._separacion_minima = separacion_minima
         self._balance_minimo = balance_minimo
         self._logger = logger
         self._mediciones = mediciones
@@ -55,16 +57,38 @@ class IdentificarCargasUseCase:
             self._logger.warning("%s no tiene mediciones en el rango pedido", request.medidor)
         return serie
 
+    def _elegir_umbral(self, serie: list[Medicion]) -> float | None:
+        if self._umbral_kw is not None:
+            self._logger.info("Umbral fijo por configuración: %s kW", self._umbral_kw)
+            return self._umbral_kw
+        estimacion = estimar_umbral(serie)
+        if estimacion is None:
+            self._logger.warning("No hay suficientes mediciones para estimar el umbral automático")
+            return None
+        self._logger.info(
+            "Umbral automático: %s kW (Otsu, separación ruido/eventos η=%.2f)",
+            estimacion.umbral_kw, estimacion.separacion,
+        )  # fmt: skip
+        if not estimacion.es_confiable(self._separacion_minima):
+            self._logger.warning(
+                "No hay un valle claro entre ruido y eventos (η=%.2f < %.2f): el umbral es poco confiable",
+                estimacion.separacion, self._separacion_minima,
+            )  # fmt: skip
+        return estimacion.umbral_kw
+
     def _detectar(self, serie: list[Medicion]) -> list[EventoCarga]:
-        self._logger.info("Paso 2/4 · Detectando saltos de potencia |ΔP| >= %s kW", self._umbral_kw)
-        eventos = detectar_eventos(serie, self._umbral_kw)
+        self._logger.info("Paso 2/4 · Detectando saltos de potencia |ΔP|")
+        umbral = self._elegir_umbral(serie)
+        if umbral is None:
+            return []
+        eventos = detectar_eventos(serie, umbral)
         encendidos = sum(e.es_encendido for e in eventos)
         self._logger.info(
             "%d eventos detectados en %d mediciones (%d ↑ encendidos, %d ↓ apagados)",
             len(eventos), len(serie), encendidos, len(eventos) - encendidos,
         )  # fmt: skip
         if serie and not eventos:
-            self._logger.warning("Ningún salto supera %s kW: probá con un umbral más bajo", self._umbral_kw)
+            self._logger.warning("Ningún salto supera %s kW: probá con un umbral más bajo", umbral)
         return eventos
 
     def _resumir(self, serie: list[Medicion], eventos: list[EventoCarga], etiquetas: list[int]) -> list[Carga]:

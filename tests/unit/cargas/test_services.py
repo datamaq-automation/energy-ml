@@ -53,3 +53,26 @@ def test_carga_on_off_requiere_encendidos_y_apagados_parecidos() -> None:
     assert Carga(potencia_tipica_kw=90, encendidos=10, apagados=9).es_on_off(0.5)
     assert not Carga(potencia_tipica_kw=227, encendidos=2, apagados=10).es_on_off(0.5)
     assert not Carga(potencia_tipica_kw=1, encendidos=0, apagados=0).es_on_off(0.5)
+
+
+def _serie(kw: list[float]) -> list[Medicion]:
+    return [Medicion(T0 + timedelta(minutes=5 * i), p) for i, p in enumerate(kw)]
+
+
+def test_estimar_umbral_cae_en_el_valle_entre_ruido_y_eventos() -> None:
+    from src.domain.cargas.services import estimar_umbral
+
+    # Ruido de ±2 kW alrededor de 100 kW y una carga de 90 kW que entra y sale.
+    base = [100 + (i % 5) - 2 for i in range(200)]
+    kw = [p + (90 if (i // 10) % 2 else 0) for i, p in enumerate(base)]
+    estimacion = estimar_umbral(_serie(kw))
+    assert estimacion is not None
+    assert 5 < estimacion.umbral_kw < 85
+    assert estimacion.es_confiable(0.8)
+
+
+def test_estimar_umbral_sin_variacion_no_estima() -> None:
+    from src.domain.cargas.services import estimar_umbral
+
+    assert estimar_umbral(_serie([100, 100, 100])) is None
+    assert estimar_umbral(_serie([100])) is None

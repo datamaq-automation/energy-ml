@@ -40,3 +40,18 @@ class Carga:
         """Una carga ON/OFF real se enciende y se apaga una cantidad parecida de veces."""
         mayor = max(self.encendidos, self.apagados)
         return mayor > 0 and self.ciclos / mayor >= balance_minimo
+
+
+@dataclass(frozen=True)
+class EstimacionUmbral:
+    """Umbral |ΔP| que mejor separa el ruido de los eventos (método de Otsu).
+
+    separacion (η, entre 0 y 1) mide qué tan claras son las dos montañas del histograma:
+    ~0,7 es lo que da una sola montaña (no hay nada que separar); cerca de 1, un valle limpio.
+    """
+
+    umbral_kw: float
+    separacion: float
+
+    def es_confiable(self, separacion_minima: float) -> bool:
+        return self.separacion >= separacion_minima

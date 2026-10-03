@@ -35,7 +35,11 @@ class Settings(BaseSettings):
     RESULTADOS_DIR: str = Field(default="data/output")
 
     # NILM (valores iniciales derivados del análisis de la planta UPP)
-    NILM_UMBRAL_KW: float = Field(default=60.0)
+    # Umbral |ΔP| para detectar eventos. None = automático por medidor (método de Otsu);
+    # un número (ej. NILM_UMBRAL_KW=60) lo fija a mano para comparar.
+    NILM_UMBRAL_KW: float | None = Field(default=None)
+    # Separación mínima (η de Otsu) para confiar en el umbral automático; una sola montaña da ~0.7
+    NILM_SEPARACION_MINIMA: float = Field(default=0.8)
     NILM_EPS_KW: float = Field(default=8.0)
     NILM_MIN_EVENTOS: int = Field(default=10)
     # Proporción mínima encendidos/apagados para considerar una carga ON/OFF (0.5 = uno a lo sumo el doble del otro)
@@ -43,8 +47,9 @@ class Settings(BaseSettings):
 
 
 def describir_nilm(settings: Settings) -> str:
+    umbral = "automático" if settings.NILM_UMBRAL_KW is None else f"{settings.NILM_UMBRAL_KW} kW"
     return (
-        f"Configuración NILM: umbral {settings.NILM_UMBRAL_KW} kW · eps {settings.NILM_EPS_KW} kW · "
+        f"Configuración NILM: umbral {umbral} · eps {settings.NILM_EPS_KW} kW · "
         f"mínimo {settings.NILM_MIN_EVENTOS} eventos · datos en {settings.MEDICIONES_CSV_DIR}"
     )
 

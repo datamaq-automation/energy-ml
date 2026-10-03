@@ -53,6 +53,7 @@ def main() -> None:
         umbral_kw=settings.NILM_UMBRAL_KW,
         logger=logger,
         balance_minimo=settings.NILM_BALANCE_MINIMO,
+        separacion_minima=settings.NILM_SEPARACION_MINIMA,
     )
     disponibles = repositorio.medidores()
     if not disponibles:

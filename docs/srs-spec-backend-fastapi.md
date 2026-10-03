@@ -71,7 +71,7 @@
 * **FR-03 - Emisión de Eventos y Notificaciones:** El sistema debe emitir alertas/eventos asíncronos vía (etapa posterior) webhook cuando una carga identificada supere su consumo típico.
 * **FR-04 - Control de Acceso y Autorización:** El sistema debe restringir el acceso a los recursos mediante API key (etapa posterior); en la etapa didáctica la API es local.
 * **FR-05 - Seguridad y Anti-Abuso:** El sistema debe implementar rate limiting, sanitización estricta de entradas y mitigación de vulnerabilidades OWASP (SQLi, XSS, SSRF).
-* **FR-06 - Detección de Eventos:** El sistema debe detectar cambios de estado como saltos |ΔP| entre muestras consecutivas mayores a un umbral configurable (por defecto 60 kW).
+* **FR-06 - Detección de Eventos:** El sistema debe detectar cambios de estado como saltos |ΔP| entre muestras consecutivas mayores a un umbral. Por defecto el umbral es automático por medidor (método de Otsu sobre el histograma de |ΔP|), con un WARNING cuando la separación ruido/eventos es baja (η < `NILM_SEPARACION_MINIMA`); `NILM_UMBRAL_KW` lo fija a mano.
 * **FR-07 - Identificación de Cargas:** El sistema debe agrupar los eventos por magnitud (DBSCAN, `eps` y `min_samples` configurables) y devolver cada grupo como carga candidata con potencia típica y cantidad de encendidos/apagados.
 * **FR-08 - Validación de Unidades:** Los datasets ya están en kW (la conversión desde W se hace al extraerlos); el dominio trabaja siempre en kW.
 
@@ -201,7 +201,8 @@
       MEDICIONES_CSV_DIR: str = Field(default="data/input")
 
       # NILM
-      NILM_UMBRAL_KW: float = Field(default=60.0)
+      NILM_UMBRAL_KW: float | None = Field(default=None)  # None = automático (Otsu)
+      NILM_SEPARACION_MINIMA: float = Field(default=0.8)
       NILM_EPS_KW: float = Field(default=8.0)
       NILM_MIN_EVENTOS: int = Field(default=10)
 

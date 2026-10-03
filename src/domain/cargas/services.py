@@ -3,7 +3,7 @@
 from collections import defaultdict
 from itertools import pairwise
 
-from src.domain.cargas.entities import Carga, EventoCarga, Medicion
+from src.domain.cargas.entities import Carga, EstimacionUmbral, EventoCarga, Medicion
 
 
 def detectar_eventos(mediciones: list[Medicion], umbral_kw: float) -> list[EventoCarga]:
@@ -17,6 +17,33 @@ def detectar_eventos(mediciones: list[Medicion], umbral_kw: float) -> list[Event
         if abs(delta) >= umbral_kw:
             eventos.append(EventoCarga(instante=actual.instante, delta_kw=delta))
     return eventos
+
+
+def estimar_umbral(mediciones: list[Medicion]) -> EstimacionUmbral | None:
+    """Elige el umbral |ΔP| con el método de Otsu: el corte que maximiza la varianza entre clases.
+
+    Separa los saltos chicos (ruido: cargas que varían de a poco) de los grandes (encendidos y
+    apagados). Devuelve None si no hay al menos dos valores distintos de |ΔP| para separar.
+    """
+    ordenadas = sorted(mediciones, key=lambda m: m.instante)
+    saltos = sorted(abs(b.potencia_kw - a.potencia_kw) for a, b in pairwise(ordenadas))
+    n, total = len(saltos), sum(saltos)
+    if n < 2 or saltos[0] == saltos[-1]:
+        return None
+    media = total / n
+    varianza_total = sum((x - media) ** 2 for x in saltos) / n
+    mejor_varianza, mejor_corte, acumulado = 0.0, 1, 0.0
+    for i in range(1, n):
+        acumulado += saltos[i - 1]
+        if saltos[i] == saltos[i - 1]:
+            continue
+        peso_ruido = i / n
+        media_ruido, media_eventos = acumulado / i, (total - acumulado) / (n - i)
+        varianza_entre = peso_ruido * (1 - peso_ruido) * (media_ruido - media_eventos) ** 2
+        if varianza_entre > mejor_varianza:
+            mejor_varianza, mejor_corte = varianza_entre, i
+    umbral = (saltos[mejor_corte - 1] + saltos[mejor_corte]) / 2
+    return EstimacionUmbral(umbral_kw=round(umbral, 1), separacion=round(mejor_varianza / varianza_total, 2))
 
 
 def resumir_cargas(eventos: list[EventoCarga], etiquetas: list[int]) -> list[Carga]:
