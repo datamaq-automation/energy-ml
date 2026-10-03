@@ -27,10 +27,10 @@ La intuición: si un equipo de 90 kW arranca, el consumo total **salta** unos 90
 
 ```
 potencia
- (kW)       ┌──────┐         ┌──────┐
- 300 ─      │      │         │      │      ← equipo de ~90 kW encendido
-            │      │         │      │
- 210 ─ ─────┘      └─────────┘      └────  ← consumo de base (con ruido)
+ (kW)       +------+         +------+
+ 300 -      |      |         |      |      ← equipo de ~90 kW encendido
+            |      |         |      |
+ 210 - -----+      +---------+      +----  ← consumo de base (con ruido)
               ↑ +90    ↓ -90   ↑ +90   ↓ -90
                          tiempo →
 ```
@@ -278,22 +278,22 @@ NILM_UMBRAL_KW=60 ./run.sh train planta_2_b
 El proyecto usa **Clean Architecture**: el centro (las reglas de NILM) no conoce frameworks, archivos ni librerías de ML. Las dependencias apuntan **siempre hacia adentro**.
 
 ```
-┌───────────────────────── infrastructure ─────────────────────────┐
-│  fastapi/ (API + páginas)   cli/ (./run.sh train)                │
-│  csv/ (leer mediciones, guardar cargas)   sklearn/ (DBSCAN)      │
-│  settings/ (config.py, logger.py)                                │
-│   ┌──────────────────── application ────────────────────┐        │
-│   │  IdentificarCargasUseCase  ·  DTOs (Request/Response) │       │
-│   │   ┌──────────────── domain ────────────────┐          │       │
-│   │   │ Medicion, EventoCarga, Carga, ...      │          │       │
-│   │   │ detectar_eventos, estimar_umbral,      │          │       │
-│   │   │ estimar_radio, resumir_cargas, ...     │          │       │
-│   │   │ Puertos: MedicionRepository,           │          │       │
-│   │   │ AgrupadorEventos, CargaRepository,     │          │       │
-│   │   │ Bitacora                               │          │       │
-│   │   └────────────────────────────────────────┘          │       │
-│   └──────────────────────────────────────────────────────┘        │
-└──────────────────────────────────────────────────────────────────┘
++------------------------ infrastructure ------------------------+
+|  fastapi/ (API + páginas)   cli/ (./run.sh train)              |
+|  csv/ (leer mediciones, guardar cargas)   sklearn/ (DBSCAN)    |
+|  settings/ (config.py, logger.py)                              |
+|  +-------------------- application ---------------------+      |
+|  | IdentificarCargasUseCase  ·  DTOs (Request/Response) |      |
+|  |  +----------------- domain -----------------+        |      |
+|  |  | Medicion, EventoCarga, Carga, ...        |        |      |
+|  |  | detectar_eventos, estimar_umbral,        |        |      |
+|  |  | estimar_radio, resumir_cargas, ...       |        |      |
+|  |  | Puertos: MedicionRepository,             |        |      |
+|  |  | AgrupadorEventos, CargaRepository,       |        |      |
+|  |  | Bitacora                                 |        |      |
+|  |  +------------------------------------------+        |      |
+|  +------------------------------------------------------+      |
++----------------------------------------------------------------+
 ```
 
 ### Mapa de archivos
