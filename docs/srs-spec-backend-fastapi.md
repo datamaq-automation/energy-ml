@@ -209,24 +209,27 @@
       return Settings()
   ```
 
-#### C. `src/infrastructure/settings/logger.py` (Logging Estructurado)
-* Centraliza la inicialización de loggers con formato estructurado (JSON en producción, formateado en desarrollo):
+#### C. `src/infrastructure/settings/logger.py` (Logging con formato uvicorn)
+* Centraliza el logger con el mismo formateador que uvicorn, para que la CLI se vea pareja (`INFO:     mensaje`, con color en terminal):
   ```python
   import logging
   import sys
+
+  from uvicorn.logging import DefaultFormatter
+
   from src.infrastructure.settings.config import get_settings
 
   def setup_logging() -> logging.Logger:
       settings = get_settings()
       log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-      
-      logging.basicConfig(
-          level=log_level,
-          format="%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
-          handlers=[logging.StreamHandler(sys.stdout)],
-      )
+
+      handler = logging.StreamHandler(sys.stdout)
+      handler.setFormatter(DefaultFormatter("%(levelprefix)s %(message)s", use_colors=None))
+
       logger = logging.getLogger(settings.PROJECT_NAME)
+      logger.handlers = [handler]
       logger.setLevel(log_level)
+      logger.propagate = False
       return logger
 
   logger = setup_logging()
