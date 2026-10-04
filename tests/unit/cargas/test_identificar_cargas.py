@@ -66,6 +66,8 @@ def test_avisa_si_una_carga_no_es_on_off() -> None:
     caso = IdentificarCargasUseCase(
         RepoFalso([300, 210, 120, 210, 120]), AgrupadorPorSigno(), umbral_kw=60, logger=bitacora
     )
-    res = caso.execute(IdentificarCargasRequest(medidor="X", desde=T0, hasta=T0 + timedelta(days=1)))
+    res = caso.execute(
+        IdentificarCargasRequest(medidor="X", desde=T0, hasta=T0 + timedelta(days=1))
+    )
     assert [(c.encendidos, c.apagados) for c in res.cargas] == [(1, 3)]
     assert any("no es una sola carga ON/OFF" in w for w in bitacora.warnings)

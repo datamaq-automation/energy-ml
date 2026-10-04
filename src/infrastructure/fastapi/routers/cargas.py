@@ -26,5 +26,8 @@ def identificar_cargas(
     try:
         request = IdentificarCargasRequest(medidor=medidor, desde=desde, hasta=hasta)
     except ValidationError as error:
-        raise HTTPException(status_code=422, detail=error.errors(include_url=False, include_context=False, include_input=False)) from error
+        raise HTTPException(
+            status_code=422,
+            detail=error.errors(include_url=False, include_context=False, include_input=False),
+        ) from error
     return caso_de_uso.execute(request)

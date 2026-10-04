@@ -13,8 +13,11 @@ def test_solo_logger_py_importa_logging() -> None:
         for p in (RAIZ / carpeta).rglob("*.py")
         if p != UNICO
         and any(
-            linea.strip() == "import logging" or linea.strip().startswith(("import logging.", "from logging"))
+            linea.strip() == "import logging"
+            or linea.strip().startswith(("import logging.", "from logging"))
             for linea in p.read_text(encoding="utf-8").splitlines()
         )
     ]
-    assert infractores == [], f"Importá `logger` desde src/infrastructure/settings/logger.py: {infractores}"
+    assert infractores == [], (
+        f"Importá `logger` desde src/infrastructure/settings/logger.py: {infractores}"
+    )

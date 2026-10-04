@@ -28,7 +28,9 @@ class CsvVerdadRepository:
 
     def listar(self, medidor: str) -> list[EventoReal]:
         if medidor not in self.medidores():
-            raise LookupError(f"No hay verdad conocida para {medidor}: solo para medidores simulados")
+            raise LookupError(
+                f"No hay verdad conocida para {medidor}: solo para medidores simulados"
+            )
         with (self._carpeta / f"{medidor}.csv").open(encoding="utf-8") as archivo:
             return [
                 EventoReal(

@@ -10,11 +10,14 @@ from src.application.cargas.dtos.clasificacion import (
     ClassifyKNNRequest,
     ClassifyKNNResponse,
 )
+from src.application.cargas.dtos.metricas import MetricasResponse
 from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
+from src.application.cargas.use_cases.obtener_metricas import ObtenerMetricasUseCase
 from src.infrastructure.fastapi.dependencies import (
     get_clasificar_bayes_use_case,
     get_clasificar_knn_use_case,
+    get_obtener_metricas_use_case,
 )
 
 router = APIRouter(tags=["Clasificación"])
@@ -36,3 +39,11 @@ def classify_knn(
 ) -> ClassifyKNNResponse:
     """Clasificación de firmas eléctricas basada en instancias (k-NN) y normalización z-score."""
     return caso_de_uso.execute(request)
+
+
+@router.get("/metrics", response_model=MetricasResponse)
+def obtener_metricas(
+    caso_de_uso: Annotated[ObtenerMetricasUseCase, Depends(get_obtener_metricas_use_case)],
+) -> MetricasResponse:
+    """Métricas de desempeño del modelo supervisado: matriz de confusión, F1, accuracy."""
+    return caso_de_uso.execute()

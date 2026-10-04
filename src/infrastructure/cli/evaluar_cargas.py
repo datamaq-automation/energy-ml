@@ -24,15 +24,23 @@ from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 
 
 def leer_argumentos() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evalúa la identificación de cargas contra la verdad conocida.")
-    parser.add_argument("medidor", nargs="?", default="sintetico", help="medidor simulado (por defecto: sintetico)")
+    parser = argparse.ArgumentParser(
+        description="Evalúa la identificación de cargas contra la verdad conocida."
+    )
+    parser.add_argument(
+        "medidor", nargs="?", default="sintetico", help="medidor simulado (por defecto: sintetico)"
+    )
     agregar_parametros_nilm(parser)
     return parser.parse_args()
 
 
 def main() -> None:
     args = leer_argumentos()
-    cambios = {var: getattr(args, opcion) for opcion, var in PARAMETROS_NILM.items() if getattr(args, opcion) is not None}
+    cambios = {
+        var: getattr(args, opcion)
+        for opcion, var in PARAMETROS_NILM.items()
+        if getattr(args, opcion) is not None
+    }
     settings = get_settings().model_copy(update=cambios)
     verdad = CsvVerdadRepository(Path(settings.VERDAD_DIR))
     if args.medidor not in verdad.medidores():

@@ -56,7 +56,9 @@ class IdentificarCargasUseCase:
             else []
         )
         cargas = self._resumir(serie, eventos, etiquetas)
-        return self._responder(request.medidor, serie, eventos, etiquetas, cargas, umbral, agrupamiento)
+        return self._responder(
+            request.medidor, serie, eventos, etiquetas, cargas, umbral, agrupamiento
+        )
 
     def _responder(
         self,
@@ -78,7 +80,9 @@ class IdentificarCargasUseCase:
             apagados=len(eventos) - encendidos,
             eventos_sin_grupo=etiquetas.count(-1),
             dias=round(dias, 1),
-            potencia_media_kw=round(sum(m.potencia_kw for m in serie) / len(serie), 1) if serie else 0.0,
+            potencia_media_kw=round(sum(m.potencia_kw for m in serie) / len(serie), 1)
+            if serie
+            else 0.0,
             cargas=[
                 CargaResponse(
                     potencia_tipica_kw=c.potencia_tipica_kw,
@@ -92,20 +96,32 @@ class IdentificarCargasUseCase:
             ],
             umbral=umbral,
             agrupamiento=agrupamiento,
-            serie=[PuntoResponse(instante=m.instante, potencia_kw=m.potencia_kw) for m in sorted(serie, key=lambda m: m.instante)],
+            serie=[
+                PuntoResponse(instante=m.instante, potencia_kw=m.potencia_kw)
+                for m in sorted(serie, key=lambda m: m.instante)
+            ],
             detalle_eventos=_detalle_eventos(eventos, etiquetas),
             histograma=[
-                BarraHistogramaResponse(desde_kw=b.desde_kw, hasta_kw=b.hasta_kw, cantidad=b.cantidad)
+                BarraHistogramaResponse(
+                    desde_kw=b.desde_kw, hasta_kw=b.hasta_kw, cantidad=b.cantidad
+                )
                 for b in histograma(saltos_kw(serie))
             ],
         )
 
     def _leer(self, request: IdentificarCargasRequest) -> list[Medicion]:
-        self._logger.info("Paso 1/4 · Leyendo mediciones de %s (%s → %s)", request.medidor, request.desde, request.hasta)
+        self._logger.info(
+            "Paso 1/4 · Leyendo mediciones de %s (%s → %s)",
+            request.medidor,
+            request.desde,
+            request.hasta,
+        )
         serie = self._mediciones.listar(request.medidor, request.desde, request.hasta)
         if serie:
             media = sum(m.potencia_kw for m in serie) / len(serie)
-            self._logger.info("Potencia media del medidor: %.0f kW (para comparar con las cargas)", media)
+            self._logger.info(
+                "Potencia media del medidor: %.0f kW (para comparar con las cargas)", media
+            )
         else:
             self._logger.warning("%s no tiene mediciones en el rango pedido", request.medidor)
         return serie
@@ -130,7 +146,10 @@ class IdentificarCargasUseCase:
                 estimacion.separacion, self._separacion_minima,
             )  # fmt: skip
         return UmbralResponse(
-            kw=estimacion.umbral_kw, automatico=True, separacion=estimacion.separacion, confiable=confiable
+            kw=estimacion.umbral_kw,
+            automatico=True,
+            separacion=estimacion.separacion,
+            confiable=confiable,
         )
 
     def _elegir_agrupamiento(
@@ -151,7 +170,10 @@ class IdentificarCargasUseCase:
         minimo, minimo_automatico = self._min_eventos, self._min_eventos is None
         if minimo is None:
             minimo = estimar_min_eventos(_dias(serie))
-            self._logger.info("Mínimo automático: %d eventos por carga (uno por día analizado, al menos 3)", minimo)
+            self._logger.info(
+                "Mínimo automático: %d eventos por carga (uno por día analizado, al menos 3)",
+                minimo,
+            )
         else:
             self._logger.info("Mínimo fijo por configuración: %d eventos por carga", minimo)
         return AgrupamientoResponse(
@@ -174,7 +196,9 @@ class IdentificarCargasUseCase:
             self._logger.warning("Ningún salto supera %s kW: probá con un umbral más bajo", umbral)
         return eventos
 
-    def _resumir(self, serie: list[Medicion], eventos: list[EventoCarga], etiquetas: list[int]) -> list[Carga]:
+    def _resumir(
+        self, serie: list[Medicion], eventos: list[EventoCarga], etiquetas: list[int]
+    ) -> list[Carga]:
         self._logger.info("Paso 4/4 · Resumiendo cargas")
         cargas = resumir_cargas(eventos, etiquetas)
         dias = _dias(serie)
@@ -182,7 +206,11 @@ class IdentificarCargasUseCase:
             por_dia = ""
             if dias >= 1:
                 frecuencia = c.ciclos / dias
-                por_dia = f" (≈{frecuencia:.0f}/día)" if frecuencia >= 1 else f" (≈{frecuencia * 7:.1f}/semana)"
+                por_dia = (
+                    f" (≈{frecuencia:.0f}/día)"
+                    if frecuencia >= 1
+                    else f" (≈{frecuencia * 7:.1f}/semana)"
+                )
             self._logger.info(
                 "Carga de ~%s kW: %d ↑ encendidos, %d ↓ apagados, %d ciclos%s",
                 c.potencia_tipica_kw, c.encendidos, c.apagados, c.ciclos, por_dia,
@@ -193,7 +221,9 @@ class IdentificarCargasUseCase:
                     c.potencia_tipica_kw, c.encendidos, c.apagados,
                 )  # fmt: skip
         if eventos and not cargas:
-            self._logger.warning("Hubo eventos pero ningún grupo alcanzó el mínimo para ser una carga")
+            self._logger.warning(
+                "Hubo eventos pero ningún grupo alcanzó el mínimo para ser una carga"
+            )
         return cargas
 
 

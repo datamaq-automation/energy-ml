@@ -235,4 +235,3 @@ class DiagnosticoFirma:
     confianza: float
     distancia_promedio: float
     vecinos: list[VecinoCercano]
-

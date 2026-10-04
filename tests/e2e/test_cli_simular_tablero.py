@@ -10,7 +10,9 @@ from src.infrastructure.csv.verdad_repository import CsvVerdadRepository
 from src.infrastructure.settings.config import get_settings
 
 
-def test_simulate_genera_mediciones_y_verdad(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_simulate_genera_mediciones_y_verdad(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("MEDICIONES_CSV_DIR", str(tmp_path / "input"))
     monkeypatch.setenv("VERDAD_DIR", str(tmp_path / "verdad"))
     monkeypatch.setattr("sys.argv", ["simulate", "--nombre", "prueba", "--dias", "2"])

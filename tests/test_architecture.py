@@ -166,7 +166,9 @@ def verify_domain_isolation(root_dir: Path | None = None) -> list[str]:
             imports = extract_imports(tree)
             for module_name, lineno, _ in imports:
                 if any(module_name.startswith(pkg) for pkg in domain_forbidden):
-                    errors.append(f"[DOMINIO VIOLADO] {rel_path}:{lineno} importa módulo prohibido '{module_name}'.")
+                    errors.append(
+                        f"[DOMINIO VIOLADO] {rel_path}:{lineno} importa módulo prohibido '{module_name}'."
+                    )
 
     return errors
 
@@ -224,16 +226,23 @@ def verify_application_and_adapters_layers(root_dir: Path | None = None) -> list
 
             imports = extract_imports(tree)
             for module_name, lineno, _ in imports:
-                if "src/application" in rel_path and any(module_name.startswith(pkg) for pkg in application_forbidden):
-                    errors.append(f"[APLICACIÓN VIOLADA] {rel_path}:{lineno} importa módulo prohibido '{module_name}'.")
+                if "src/application" in rel_path and any(
+                    module_name.startswith(pkg) for pkg in application_forbidden
+                ):
+                    errors.append(
+                        f"[APLICACIÓN VIOLADA] {rel_path}:{lineno} importa módulo prohibido '{module_name}'."
+                    )
 
-                elif "src/adapters" in rel_path and any(module_name.startswith(pkg) for pkg in adapters_forbidden):
+                elif "src/adapters" in rel_path and any(
+                    module_name.startswith(pkg) for pkg in adapters_forbidden
+                ):
                     errors.append(
                         f"[ADAPTADORES VIOLADO] {rel_path}:{lineno} importa módulo prohibido '{module_name}'."
                     )
 
                 elif (
-                    "src/infrastructure/fastapi/routers" in rel_path or "src/infrastructure/fastapi/routes" in rel_path
+                    "src/infrastructure/fastapi/routers" in rel_path
+                    or "src/infrastructure/fastapi/routes" in rel_path
                 ):
                     if any(module_name.startswith(pkg) for pkg in ("sqlalchemy", "sqlmodel")):
                         errors.append(
@@ -312,7 +321,11 @@ def verify_function_return_types(root_dir: Path | None = None) -> list[str]:
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         func_name = node.name
                         # Ignorar métodos mágicos especiales excepto __init__
-                        if func_name.startswith("__") and func_name.endswith("__") and func_name != "__init__":
+                        if (
+                            func_name.startswith("__")
+                            and func_name.endswith("__")
+                            and func_name != "__init__"
+                        ):
                             continue
 
                         if func_name != "__init__" and node.returns is None:
@@ -357,7 +370,11 @@ def verify_function_arg_types(root_dir: Path | None = None) -> list[str]:
                 for node in ast.walk(tree):
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         func_name = node.name
-                        if func_name.startswith("__") and func_name.endswith("__") and func_name != "__init__":
+                        if (
+                            func_name.startswith("__")
+                            and func_name.endswith("__")
+                            and func_name != "__init__"
+                        ):
                             continue
 
                         for arg in node.args.args:
@@ -397,7 +414,11 @@ def verify_no_unstructured_prints(root_dir: Path | None = None) -> list[str]:
                 continue
 
             for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "print":
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "print"
+                ):
                     errors.append(
                         f"[OBSERVABILIDAD] {rel_path}:{node.lineno} uso de 'print()' en producción. Utilice logging o structlog."
                     )
@@ -461,7 +482,9 @@ def verify_no_hardcoded_secrets(root_dir: Path | None = None) -> list[str]:
                         continue
                     for pattern, desc in suspicious_patterns:
                         if pattern.search(line):
-                            errors.append(f"[SECRETO HARDCODEADO] {rel_path}:{lineno} {desc}. Centralice en Settings.")
+                            errors.append(
+                                f"[SECRETO HARDCODEADO] {rel_path}:{lineno} {desc}. Centralice en Settings."
+                            )
             except Exception:
                 pass
 
@@ -646,24 +669,27 @@ def test_no_hardcoded_secrets():
 def test_no_raw_sql_formatting():
     """Restricción 2: Prohibida concatenación o f-strings en SQL crudo (text()). Riesgo de SQLi."""
     errors = verify_no_raw_sql_formatting()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} usos inseguros de SQL crudo:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} usos inseguros de SQL crudo:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
 def test_no_os_environ_direct_access():
     """Restricción 3: Prohibido acceder a os.environ u os.getenv fuera de Settings."""
     errors = verify_no_os_environ_direct_access()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} accesos no centralizados al entorno:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} accesos no centralizados al entorno:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
 def test_domain_isolation():
     """Restricción 2: El Core de Dominio no debe depender de frameworks ni I/O."""
     errors = verify_domain_isolation()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} violaciones de aislamiento de dominio:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} violaciones de aislamiento de dominio:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
@@ -679,8 +705,9 @@ def test_application_and_adapters_layers():
 def test_function_return_types():
     """Restricción 4: 100% de funciones en domain y application deben especificar tipo de retorno explícito."""
     errors = verify_function_return_types()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} funciones sin tipo de retorno:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} funciones sin tipo de retorno:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
@@ -695,16 +722,18 @@ def test_function_arg_types():
 def test_init_files_must_be_empty():
     """Restricción 6: El 100% de los archivos __init__.py deben tener exactamente 0 bytes."""
     errors = verify_init_files_empty()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} archivos __init__.py no vacíos:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} archivos __init__.py no vacíos:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
 def test_no_relative_imports():
     """Restricción 7: Todos los imports en src/ deben ser absolutos ('from src...')."""
     errors = verify_no_relative_imports()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} imports relativos prohibidos:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} imports relativos prohibidos:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
@@ -719,8 +748,9 @@ def test_no_unstructured_prints():
 def test_relative_path_headers():
     """Restricción 9: Todo archivo .py (excepto __init__.py) debe comenzar con su ruta relativa."""
     errors = verify_relative_path_headers()
-    assert not errors, f"\n❌ Se detectaron {len(errors)} archivos sin cabecera de path relativo:\n\n" + "\n".join(
-        f"  • {err}" for err in errors
+    assert not errors, (
+        f"\n❌ Se detectaron {len(errors)} archivos sin cabecera de path relativo:\n\n"
+        + "\n".join(f"  • {err}" for err in errors)
     )
 
 
@@ -785,7 +815,9 @@ def main() -> None:
         print("=" * 70)
         sys.exit(1)
     else:
-        print("🎉 RESULTADO FINAL: 100% de las restricciones arquitectónicas fueron superadas con éxito.")
+        print(
+            "🎉 RESULTADO FINAL: 100% de las restricciones arquitectónicas fueron superadas con éxito."
+        )
         print("=" * 70)
         sys.exit(0)
 

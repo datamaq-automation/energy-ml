@@ -7,6 +7,10 @@ from fastapi import Request
 from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
+from src.application.cargas.use_cases.obtener_metricas import (
+    MatrizConfusionRepository,
+    ObtenerMetricasUseCase,
+)
 from src.domain.cargas.repositories import ClasificadorBayes, ClasificadorKNN, MedicionRepository
 from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import get_settings
@@ -54,3 +58,12 @@ def get_clasificar_bayes_use_case(request: Request) -> ClasificarBayesUseCase:
 
 def get_clasificar_knn_use_case(request: Request) -> ClasificarKNNUseCase:
     return ClasificarKNNUseCase(clasificador=get_clasificador_knn(request))
+
+
+def get_obtener_metricas_use_case(request: Request) -> ObtenerMetricasUseCase:
+    if hasattr(request.app.state, "matriz_confusion_repo"):
+        repo = request.app.state.matriz_confusion_repo
+    else:
+        repo = MatrizConfusionRepository()
+        request.app.state.matriz_confusion_repo = repo
+    return ObtenerMetricasUseCase(matriz_confusion_repo=repo)

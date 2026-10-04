@@ -35,7 +35,9 @@ class Bitacora(Protocol):
 class AgrupadorEventos(Protocol):
     """Agrupa eventos por magnitud; devuelve una etiqueta por evento (-1 = ruido)."""
 
-    def agrupar(self, eventos: list[EventoCarga], radio_kw: float, min_eventos: int) -> list[int]: ...
+    def agrupar(
+        self, eventos: list[EventoCarga], radio_kw: float, min_eventos: int
+    ) -> list[int]: ...
 
 
 class CargaRepository(Protocol):
@@ -67,7 +69,9 @@ class ClasificadorSaltos(Protocol):
 class ClasificadorBayes(Protocol):
     """Clasificador probabilístico de contingencias para transformadores eléctricos."""
 
-    def predecir_contingencia(self, telemetria: TelemetriaTransformador) -> DiagnosticoContingencia: ...
+    def predecir_contingencia(
+        self, telemetria: TelemetriaTransformador
+    ) -> DiagnosticoContingencia: ...
 
 
 class ClasificadorKNN(Protocol):

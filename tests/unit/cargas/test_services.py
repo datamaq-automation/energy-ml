@@ -11,7 +11,9 @@ T0 = datetime(2026, 9, 20, 8, 0)
 
 
 def serie(*kw: float) -> list[Medicion]:
-    return [Medicion(instante=T0 + timedelta(minutes=5 * i), potencia_kw=p) for i, p in enumerate(kw)]
+    return [
+        Medicion(instante=T0 + timedelta(minutes=5 * i), potencia_kw=p) for i, p in enumerate(kw)
+    ]
 
 
 def test_detecta_encendido_y_apagado_de_carga_grande() -> None:
@@ -38,7 +40,10 @@ def test_umbral_invalido() -> None:
 def test_resume_grupos_e_ignora_ruido() -> None:
     eventos = [EventoCarga(T0, 90), EventoCarga(T0, -92), EventoCarga(T0, 30), EventoCarga(T0, 500)]
     cargas = resumir_cargas(eventos, [0, 0, 1, -1])
-    assert [(c.potencia_tipica_kw, c.encendidos, c.apagados) for c in cargas] == [(91.0, 1, 1), (30.0, 1, 0)]
+    assert [(c.potencia_tipica_kw, c.encendidos, c.apagados) for c in cargas] == [
+        (91.0, 1, 1),
+        (30.0, 1, 0),
+    ]
     assert cargas[0].ciclos == 1
 
 

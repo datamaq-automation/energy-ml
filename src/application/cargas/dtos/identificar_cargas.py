@@ -22,8 +22,13 @@ class CargaResponse(BaseModel):
     encendidos: int
     apagados: int
     ciclos: int
-    ciclos_por_dia: float | None = Field(default=None, description="None si el rango es menor a un día")
-    on_off: bool = Field(default=True, description="Encendidos y apagados parecidos: se comporta como un equipo ON/OFF")
+    ciclos_por_dia: float | None = Field(
+        default=None, description="None si el rango es menor a un día"
+    )
+    on_off: bool = Field(
+        default=True,
+        description="Encendidos y apagados parecidos: se comporta como un equipo ON/OFF",
+    )
 
 
 class PuntoResponse(BaseModel):
@@ -34,7 +39,9 @@ class PuntoResponse(BaseModel):
 class EventoResponse(BaseModel):
     instante: datetime
     delta_kw: float = Field(description="Positivo: encendido; negativo: apagado")
-    carga_kw: float | None = Field(description="Potencia típica de la carga a la que pertenece; None si quedó sin grupo")
+    carga_kw: float | None = Field(
+        description="Potencia típica de la carga a la que pertenece; None si quedó sin grupo"
+    )
 
 
 class BarraHistogramaResponse(BaseModel):
@@ -47,7 +54,9 @@ class UmbralResponse(BaseModel):
     kw: float | None = Field(description="Umbral |ΔP| usado; None si no se pudo estimar")
     automatico: bool
     separacion: float | None = Field(default=None, description="η de Otsu (solo si es automático)")
-    confiable: bool | None = Field(default=None, description="η >= separación mínima (solo si es automático)")
+    confiable: bool | None = Field(
+        default=None, description="η >= separación mínima (solo si es automático)"
+    )
 
 
 class AgrupamientoResponse(BaseModel):
@@ -69,6 +78,12 @@ class IdentificarCargasResponse(BaseModel):
     cargas: list[CargaResponse]
     umbral: UmbralResponse
     agrupamiento: AgrupamientoResponse
-    serie: list[PuntoResponse] = Field(default_factory=list, description="Potencia en el tiempo (paso 1)")
-    detalle_eventos: list[EventoResponse] = Field(default_factory=list, description="Cada evento, para marcarlo en la serie")
-    histograma: list[BarraHistogramaResponse] = Field(description="Distribución de |ΔP|: ruido a la izquierda, eventos a la derecha")
+    serie: list[PuntoResponse] = Field(
+        default_factory=list, description="Potencia en el tiempo (paso 1)"
+    )
+    detalle_eventos: list[EventoResponse] = Field(
+        default_factory=list, description="Cada evento, para marcarlo en la serie"
+    )
+    histograma: list[BarraHistogramaResponse] = Field(
+        description="Distribución de |ΔP|: ruido a la izquierda, eventos a la derecha"
+    )

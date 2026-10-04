@@ -42,7 +42,9 @@ def histograma(valores: list[float], barras: int = 30) -> list[BarraHistograma]:
     for v in ordenados:
         cantidades[min(int(v / ancho), barras - 1)] += 1
     return [
-        BarraHistograma(desde_kw=round(i * ancho, 1), hasta_kw=round((i + 1) * ancho, 1), cantidad=c)
+        BarraHistograma(
+            desde_kw=round(i * ancho, 1), hasta_kw=round((i + 1) * ancho, 1), cantidad=c
+        )
         for i, c in enumerate(cantidades)
     ]
 
@@ -70,7 +72,9 @@ def estimar_umbral(mediciones: list[Medicion]) -> EstimacionUmbral | None:
         if varianza_entre > mejor_varianza:
             mejor_varianza, mejor_corte = varianza_entre, i
     umbral = (saltos[mejor_corte - 1] + saltos[mejor_corte]) / 2
-    return EstimacionUmbral(umbral_kw=round(umbral, 1), separacion=round(mejor_varianza / varianza_total, 2))
+    return EstimacionUmbral(
+        umbral_kw=round(umbral, 1), separacion=round(mejor_varianza / varianza_total, 2)
+    )
 
 
 def nivel_de_ruido(mediciones: list[Medicion], umbral_kw: float) -> float:

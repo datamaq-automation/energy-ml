@@ -57,7 +57,11 @@ class Settings(BaseSettings):
 def describir_nilm(settings: Settings) -> str:
     umbral = "automático" if settings.NILM_UMBRAL_KW is None else f"{settings.NILM_UMBRAL_KW} kW"
     radio = "automático" if settings.NILM_EPS_KW is None else f"{settings.NILM_EPS_KW} kW"
-    minimo = "automático" if settings.NILM_MIN_EVENTOS is None else f"{settings.NILM_MIN_EVENTOS} eventos"
+    minimo = (
+        "automático"
+        if settings.NILM_MIN_EVENTOS is None
+        else f"{settings.NILM_MIN_EVENTOS} eventos"
+    )
     return (
         f"Configuración NILM: umbral {umbral} · radio {radio} · "
         f"mínimo {minimo} · datos en {settings.MEDICIONES_CSV_DIR}"

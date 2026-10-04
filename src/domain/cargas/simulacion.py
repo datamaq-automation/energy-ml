@@ -32,12 +32,22 @@ def simular_tablero(
     for i in range(n):
         instante = inicio + timedelta(minutes=PASO_MIN * i)
         base = base_kw + variacion_diaria_kw * math.sin(2 * math.pi * i / MUESTRAS_POR_DIA)
-        potencia = base + azar.gauss(0, ruido_kw) + sum(c.potencia_kw for c, on in zip(cargas, encendida, strict=True) if on[i])
+        potencia = (
+            base
+            + azar.gauss(0, ruido_kw)
+            + sum(c.potencia_kw for c, on in zip(cargas, encendida, strict=True) if on[i])
+        )
         mediciones.append(Medicion(instante=instante, potencia_kw=round(potencia, 2)))
         for carga, on in zip(cargas, encendida, strict=True):
             if i and on[i] != on[i - 1]:
                 signo = 1 if on[i] else -1
-                verdad.append(EventoReal(instante=instante, delta_kw=signo * carga.potencia_kw, carga_kw=carga.potencia_kw))
+                verdad.append(
+                    EventoReal(
+                        instante=instante,
+                        delta_kw=signo * carga.potencia_kw,
+                        carga_kw=carga.potencia_kw,
+                    )
+                )
     return mediciones, verdad
 
 
@@ -46,7 +56,9 @@ def _encendidos(carga: CargaSimulada, n: int, azar: random.Random) -> list[bool]
     on = [False] * n
     i = azar.randrange(0, MUESTRAS_POR_DIA // 4)
     while i < n:
-        duracion = max(1, round(azar.gauss(carga.duracion_min, carga.duracion_min * 0.2) / PASO_MIN))
+        duracion = max(
+            1, round(azar.gauss(carga.duracion_min, carga.duracion_min * 0.2) / PASO_MIN)
+        )
         for j in range(i, min(n, i + duracion)):
             on[j] = True
         # Tiempo entre arranques con media "un día / ciclos_por_dia"; la espera es lo que sobra

@@ -134,7 +134,9 @@ def analyze_file(
     total_lines, code_lines = count_lines(content)
 
     is_god_file = code_lines > max_file_lines
-    file_reason = f"Supera límite de {max_file_lines} líneas de código ({code_lines})" if is_god_file else ""
+    file_reason = (
+        f"Supera límite de {max_file_lines} líneas de código ({code_lines})" if is_god_file else ""
+    )
     file_metric = FileMetric(
         file_path=rel_path,
         total_lines=total_lines,
@@ -155,7 +157,9 @@ def analyze_file(
         if isinstance(node, ast.ClassDef):
             end_lineno = getattr(node, "end_lineno", node.lineno)
             cls_lines = end_lineno - node.lineno + 1
-            methods = [n for n in node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+            methods = [
+                n for n in node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+            ]
             method_count = len(methods)
 
             reasons = []
@@ -394,7 +398,9 @@ def main() -> None:
     print("\n📂 Top Archivos por líneas de código:")
     for idx, f in enumerate(data["top_rankings"]["top_files"][:top_limit], start=1):
         status = "⚠️ ALERTA" if f["is_god"] else "✓ OK"
-        print(f"   {idx}. [{status}] {f['file_path']} ({f['code_lines']} LOC / {f['total_lines']} total)")
+        print(
+            f"   {idx}. [{status}] {f['file_path']} ({f['code_lines']} LOC / {f['total_lines']} total)"
+        )
 
     print("\n🏛️ Top Clases por métodos y líneas:")
     for idx, c in enumerate(data["top_rankings"]["top_classes"][:top_limit], start=1):
@@ -414,7 +420,9 @@ def main() -> None:
     if summary["requires_refactoring_review"]:
         print("💡 SUGERENCIA PARA EL LLM / INGENIERO:")
         print("   Se encontraron componentes que superan los umbrales determinísticos.")
-        print("   Evalúe aplicar refactorizaciones como Extract Class, Extract Method o desacoplar módulos.")
+        print(
+            "   Evalúe aplicar refactorizaciones como Extract Class, Extract Method o desacoplar módulos."
+        )
         print("=" * 70)
         if args.strict:
             sys.exit(1)

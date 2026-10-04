@@ -20,13 +20,18 @@ class CsvMedicionRepository:
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
         # Solo nombres de archivos existentes: evita leer rutas arbitrarias ("../.env").
         if medidor not in self.medidores():
-            logger.error("Medidor desconocido: %s (disponibles: %s)", medidor, ", ".join(self.medidores()))
+            logger.error(
+                "Medidor desconocido: %s (disponibles: %s)", medidor, ", ".join(self.medidores())
+            )
             raise LookupError(f"Medidor desconocido: {medidor}")
         ruta = self._carpeta / f"{medidor}.csv"
         logger.info("Leyendo %s", ruta)
         with ruta.open(encoding="utf-8") as archivo:
             filas = (
-                Medicion(instante=datetime.fromisoformat(f["instante"]), potencia_kw=float(f["potencia_kw"]))
+                Medicion(
+                    instante=datetime.fromisoformat(f["instante"]),
+                    potencia_kw=float(f["potencia_kw"]),
+                )
                 for f in csv.DictReader(archivo)
             )
             mediciones = [m for m in filas if desde <= m.instante < hasta]

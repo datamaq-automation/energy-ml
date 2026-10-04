@@ -12,7 +12,10 @@ from src.infrastructure.csv.verdad_repository import CsvVerdadRepository
 
 def test_guardar_y_listar_devuelve_los_mismos_eventos(tmp_path: Path) -> None:
     repo: VerdadRepository = CsvVerdadRepository(tmp_path)
-    eventos = [EventoReal(datetime(2026, 9, 1, 1, 25), 90.0, 90.0), EventoReal(datetime(2026, 9, 1, 1, 40), -90.0, 90.0)]
+    eventos = [
+        EventoReal(datetime(2026, 9, 1, 1, 25), 90.0, 90.0),
+        EventoReal(datetime(2026, 9, 1, 1, 40), -90.0, 90.0),
+    ]
     repo.guardar("sim", eventos)
     assert repo.listar("sim") == eventos
 
