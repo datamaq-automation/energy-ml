@@ -9,6 +9,10 @@ from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUse
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
 from src.application.cargas.use_cases.explicar_arbol import ExplicarArbolUseCase
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
+from src.application.cargas.use_cases.inducir_reglas import (
+    InducirReglasUseCase,
+    ObtenerReglaUseCase,
+)
 from src.application.cargas.use_cases.obtener_metricas import (
     MatrizConfusionRepository,
     ObtenerMetricasUseCase,
@@ -86,3 +90,19 @@ def get_explicar_arbol_use_case(request: Request) -> ExplicarArbolUseCase:
 
 def get_actualizar_version_space_use_case(request: Request) -> ActualizarVersionSpaceUseCase:
     return ActualizarVersionSpaceUseCase()
+
+
+def get_inducir_reglas_use_case(request: Request) -> InducirReglasUseCase:
+    if hasattr(request.app.state, "arbol_clasificador"):
+        clasificador = request.app.state.arbol_clasificador
+    else:
+        clasificador = ArbolClasificador()
+    return InducirReglasUseCase(clasificador=clasificador)
+
+
+def get_obtener_regla_use_case(request: Request) -> ObtenerReglaUseCase:
+    if hasattr(request.app.state, "arbol_clasificador"):
+        clasificador = request.app.state.arbol_clasificador
+    else:
+        clasificador = ArbolClasificador()
+    return ObtenerReglaUseCase(clasificador=clasificador)

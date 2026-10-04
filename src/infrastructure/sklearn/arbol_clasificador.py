@@ -4,6 +4,7 @@ from sklearn.tree import DecisionTreeClassifier, export_text
 
 from src.domain.cargas.entities import Salto
 from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.extractor_reglas import ExtractorReglas
 from src.infrastructure.sklearn.serializador_arbol import SerializadorArbol
 
 RASGOS = ["ΔP", "ΔP_previo", "ΔP_siguiente"]
@@ -50,3 +51,30 @@ class ArbolClasificador:
         X = rng.normal(0, 1, (100, 3))
         y = np.where((X[:, 0] > 0) & (X[:, 1] > 0), "AB", "ninguna")
         self._modelo.fit(X, y)
+
+    def obtener_reglas_dict(self) -> dict:
+        """Reglas extraídas del árbol como lista de diccionarios."""
+        if not hasattr(self._modelo, "tree_") or self._modelo.tree_ is None:
+            self._entrenar_default()
+
+        extractor = ExtractorReglas(self._modelo)
+        conjunto = extractor.extraer_reglas()
+
+        return {
+            "reglas": [
+                {
+                    "id_regla": r.id_regla,
+                    "condiciones": [
+                        {"rasgo": c.rasgo, "operador": c.operador, "valor": c.valor}
+                        for c in r.condiciones
+                    ],
+                    "clase_predicha": r.clase_predicha,
+                    "soporte": r.soporte,
+                    "confianza": r.confianza,
+                    "texto": r.a_texto(),
+                }
+                for r in conjunto.reglas
+            ],
+            "numero_reglas": len(conjunto.reglas),
+            "cobertura_total": conjunto.cobertura_total(),
+        }
