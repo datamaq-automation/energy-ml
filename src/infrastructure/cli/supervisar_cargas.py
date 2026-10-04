@@ -11,7 +11,6 @@ from pathlib import Path
 
 from src.application.cargas.use_cases.entrenar_clasificador import EntrenarClasificadorUseCase
 from src.infrastructure.cli.entrenar_cargas import _entero_positivo
-from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.csv.verdad_repository import CsvVerdadRepository
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
@@ -62,7 +61,7 @@ def main() -> None:
         )  # fmt: skip
         return
     EntrenarClasificadorUseCase(
-        mediciones=CsvMedicionRepository(Path(settings.MEDICIONES_CSV_DIR)),
+        mediciones=get_mediciones(settings),
         verdad=verdad,
         clasificador=ArbolClasificador(profundidad=args.profundidad),
         logger=logger,

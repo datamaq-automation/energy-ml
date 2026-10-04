@@ -50,6 +50,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         list(app.state.modelos.keys()),
     )
 
+    # Sincronizar con VPS si está en modo prod (fail-fast)
+    if settings.MEDICIONES_SOURCE == "ssh":
+        logger.info("🔄 Modo PROD: sincronizando mediciones desde VPS...")
+        from src.infrastructure.mediciones_factory import get_mediciones
+
+        try:
+            repo = get_mediciones(settings)
+            if hasattr(repo, "sincronizar"):
+                repo.sincronizar()
+            logger.info("✅ Mediciones del VPS sincronizadas al startup")
+        except RuntimeError as e:
+            logger.error("❌ Fallo al sincronizar con VPS: %s", e)
+            raise
+
     yield
 
     logger.info("Liberando memoria de modelos de app.state.modelos...")

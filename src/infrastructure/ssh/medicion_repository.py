@@ -1,7 +1,10 @@
 """src/infrastructure/ssh/medicion_repository.py — Exporta mediciones desde VPS via SSH + MySQL."""
 
 import csv
+import re
 import subprocess
+import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -10,18 +13,20 @@ from src.infrastructure.settings.logger import logger
 
 
 class SshMedicionRepository:
-    """Descarga mediciones del VPS (datamaq-telemetry MySQL) y las cachea en CSV locales."""
+    """Descarga mediciones del VPS (datamaq-telemetry MySQL) y las cachea en CSV locales.
 
-    # Mapeo: nombre real en VPS → nombre anonimizado en archivos
-    MEDIDORES_MAPPING = {
+    Una sola descarga por proceso (guardada en `_sincronizado`).
+    """
+
+    # Alias conocidos: nombre real en VPS → nombre anonimizado
+    ALIASES_CONOCIDOS = {
         "Trafo arriba": "planta_2_a.csv",
         "Trafo abajo": "planta_2_b.csv",
     }
 
     SSH_HOST = "vps"
-    SSH_TIMEOUT = 30  # segundos
+    SSH_TIMEOUT = 30
 
-    # Query MySQL para exportar mediciones confiables
     CONSULTA_SQL = """
     SELECT d.name, t.recorded_at, t.total_active_power
     FROM datamaq_telemetry.telemetry_instantaneous t
@@ -31,19 +36,28 @@ class SshMedicionRepository:
     """
 
     def __init__(self, cache_dir: Path | str) -> None:
-        """
-        Args:
-            cache_dir: Directorio donde cachear los CSV descargados (ej: data/prod-cache/)
-        """
         self._cache_dir = Path(cache_dir)
-        self._medidores_descargados: set[str] = set()
+        self._sincronizado = False
+        self._ultima_descarga: datetime | None = None
+        self._duracion_descarga: float = 0.0
+        self._filas_por_medidor: dict[str, int] = {}
 
-    def _descargar_desde_vps(self) -> dict[str, list[tuple[str, float]]]:
-        """Ejecuta SSH + MySQL query en VPS y retorna datos por medidor.
+    @staticmethod
+    def _nombre_archivo(medidor: str) -> str:
+        """Nombre anonimizado para un medidor.
+
+        Usa alias si existe, sino genera slug ASCII.
+        """
+        if medidor in SshMedicionRepository.ALIASES_CONOCIDOS:
+            return SshMedicionRepository.ALIASES_CONOCIDOS[medidor]
+        sin_tildes = unicodedata.normalize("NFKD", medidor).encode("ascii", "ignore").decode()
+        return re.sub(r"[^a-z0-9]+", "_", sin_tildes.lower()).strip("_") + ".csv"
+
+    def _ejecutar_ssh(self) -> str:
+        """Ejecuta SSH + MySQL query en VPS. Retorna stdout.
 
         Raises:
-            subprocess.CalledProcessError: Si SSH o MySQL fallan
-            RuntimeError: Si la conexión es imposible (fail-fast)
+            RuntimeError: Si SSH o MySQL fallan.
         """
         logger.info(
             "📥 Conectando a VPS '%s' via SSH (timeout %ds)...", self.SSH_HOST, self.SSH_TIMEOUT
@@ -79,10 +93,17 @@ class SshMedicionRepository:
                 "(3) Clave pública configurada en VPS"
             ) from e
 
+        return resultado.stdout
+
+    def _parsear_salida(self, salida_ssh: str) -> dict[str, list[tuple[str, float]]]:
+        """Parsea stdout de MySQL. Retorna mediciones por medidor.
+
+        Convierte W → kW, formatea timestamps ISO.
+        """
         logger.info("✅ Descarga desde VPS completada. Procesando datos...")
         por_medidor: dict[str, list[tuple[str, float]]] = {}
 
-        for linea in resultado.stdout.splitlines():
+        for linea in salida_ssh.splitlines():
             if not linea.strip():
                 continue
             partes = linea.split("\t")
@@ -92,15 +113,8 @@ class SshMedicionRepository:
 
             medidor, instante, potencia_w = partes[0], partes[1], partes[2]
 
-            # Solo exportar medidores mapeados (anonimización)
-            if medidor not in self.MEDIDORES_MAPPING:
-                logger.debug("Medidor no mapeado (ignorado): %s", medidor)
-                continue
-
             W_POR_KW = 1000.0
-            instante_iso = instante.replace(
-                " ", "T"
-            )  # "2026-10-03 12:30:00" → "2026-10-03T12:30:00"
+            instante_iso = instante.replace(" ", "T")
             potencia_kw = round(float(potencia_w) / W_POR_KW, 4)
 
             if medidor not in por_medidor:
@@ -110,15 +124,16 @@ class SshMedicionRepository:
         logger.info("📊 Datos recuperados: %d medidores", len(por_medidor))
         for med, filas in por_medidor.items():
             logger.info("  - %s: %d registros", med, len(filas))
+            self._filas_por_medidor[med] = len(filas)
 
         return por_medidor
 
     def _cachear_en_csv(self, por_medidor: dict[str, list[tuple[str, float]]]) -> None:
-        """Escribe los datos descargados en CSV locales (cache)."""
+        """Escribe datos descargados en CSV locales (cache)."""
         self._cache_dir.mkdir(parents=True, exist_ok=True)
 
         for medidor, filas in por_medidor.items():
-            archivo_local = self.MEDIDORES_MAPPING[medidor]
+            archivo_local = self._nombre_archivo(medidor)
             ruta = self._cache_dir / archivo_local
 
             with ruta.open("w", newline="", encoding="utf-8") as f:
@@ -127,19 +142,41 @@ class SshMedicionRepository:
                 escritor.writerows(filas)
 
             logger.info("💾 Cacheado: %s → %s (%d registros)", medidor, ruta, len(filas))
-            self._medidores_descargados.add(medidor)
+
+    def sincronizar(self) -> None:
+        """Descargar del VPS e itempotencia: una sola vez por proceso.
+
+        Raises:
+            RuntimeError: Si SSH/MySQL fallan.
+        """
+        if self._sincronizado:
+            logger.info("ℹ️  Ya sincronizado con VPS (usando cache)")
+            return
+
+        logger.info("🚀 Sincronizando con VPS...")
+        inicio = time.time()
+
+        salida_ssh = self._ejecutar_ssh()
+        por_medidor = self._parsear_salida(salida_ssh)
+        self._cachear_en_csv(por_medidor)
+
+        self._duracion_descarga = time.time() - inicio
+        self._ultima_descarga = datetime.now()
+        self._sincronizado = True
+
+        logger.info("✅ Sincronización completada en %.1f segundos", self._duracion_descarga)
 
     def medidores(self) -> list[str]:
-        """Retorna lista de medidores disponibles (nombres anonimizados)."""
-        nombres_anonimizados = {Path(v).stem for v in self.MEDIDORES_MAPPING.values()}
+        """Retorna medidores disponibles en cache (nombres anonimizados)."""
+        nombres_anonimizados = {Path(v).stem for v in self.ALIASES_CONOCIDOS.values()}
         return sorted(
             p.stem for p in self._cache_dir.glob("*.csv") if p.stem in nombres_anonimizados
         )
 
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
-        """Recupera mediciones para un medidor en rango temporal.
+        """Recupera mediciones en rango temporal.
 
-        Si es la primera llamada, descarga desde VPS. Llamadas posteriores usan cache local.
+        Sincroniza con VPS si es necesario (red de seguridad).
 
         Args:
             medidor: Nombre anonimizado (ej: "planta_2_a")
@@ -147,31 +184,36 @@ class SshMedicionRepository:
             hasta: Fecha fin (exclusiva)
 
         Returns:
-            Lista de Medicion filtradas por rango
+            Lista de Medicion filtradas
 
         Raises:
             LookupError: Si medidor no existe
-            RuntimeError: Si descarga SSH falla
+            RuntimeError: Si sincronización SSH falla
         """
-        # En la primera llamada, descargar desde VPS
-        if not self._medidores_descargados:
-            logger.info("🚀 Primera solicitud: descargando todos los medidores desde VPS...")
-            por_medidor = self._descargar_desde_vps()
-            self._cachear_en_csv(por_medidor)
+        # Red de seguridad: si no está sincronizado, hacerlo ahora
+        if not self._sincronizado:
+            self.sincronizar()
 
-        # Construir ruta del archivo cacheado
+        # Buscar medidor real (por si alguien pasó el alias)
         medidor_real = None
-        for real, anonimizado in self.MEDIDORES_MAPPING.items():
-            if anonimizado.startswith(medidor):
+        for real, anonimizado in self.ALIASES_CONOCIDOS.items():
+            if Path(anonimizado).stem == medidor or real == medidor:
                 medidor_real = real
                 break
 
+        # También intentar como slug generado
         if not medidor_real:
-            disponibles = ", ".join(self.MEDIDORES_MAPPING.values())
+            for real in self.ALIASES_CONOCIDOS.keys():
+                if self._nombre_archivo(real).startswith(medidor):
+                    medidor_real = real
+                    break
+
+        if not medidor_real:
+            disponibles = ", ".join(Path(v).stem for v in self.ALIASES_CONOCIDOS.values())
             logger.error("Medidor desconocido: %s (disponibles: %s)", medidor, disponibles)
             raise LookupError(f"Medidor desconocido: {medidor}")
 
-        ruta = self._cache_dir / self.MEDIDORES_MAPPING[medidor_real]
+        ruta = self._cache_dir / self._nombre_archivo(medidor_real)
         if not ruta.exists():
             logger.error("Cache ausente: %s (intenta nuevamente)", ruta)
             raise LookupError(f"Datos de {medidor} no disponibles en cache")
@@ -189,3 +231,11 @@ class SshMedicionRepository:
 
         logger.info("%d mediciones dentro del rango [%s, %s)", len(mediciones), desde, hasta)
         return mediciones
+
+    def ultima_descarga_info(self) -> dict:
+        """Retorna metadatos de la última descarga (para métricas)."""
+        return {
+            "instante": self._ultima_descarga.isoformat() if self._ultima_descarga else None,
+            "duracion_segundos": self._duracion_descarga,
+            "filas_por_medidor": self._filas_por_medidor,
+        }

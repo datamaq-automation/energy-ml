@@ -22,26 +22,18 @@ from src.domain.cargas.repositories import (
     ClasificadorKNN,
     MedicionRepository,
 )
-from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
+from src.infrastructure.mediciones_factory import get_mediciones as factory_get_mediciones
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
 from src.infrastructure.sklearn.arbol_clasificador import ArbolClasificador
 from src.infrastructure.sklearn.bayes_clasificador import BayesClasificador
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 from src.infrastructure.sklearn.knn_clasificador import KNNClasificador
-from src.infrastructure.ssh.medicion_repository import SshMedicionRepository
 
 
 def get_mediciones() -> MedicionRepository:
     settings = get_settings()
-    if settings.MEDICIONES_SOURCE == "ssh":
-        logger.info(
-            "📡 Usando repositorio SSH para mediciones (cache: %s)", settings.MEDICIONES_CACHE_DIR
-        )
-        return SshMedicionRepository(cache_dir=Path(settings.MEDICIONES_CACHE_DIR))
-    else:
-        logger.info("📂 Usando repositorio local para mediciones (%s)", settings.MEDICIONES_CSV_DIR)
-        return CsvMedicionRepository(Path(settings.MEDICIONES_CSV_DIR))
+    return factory_get_mediciones(settings)
 
 
 def get_identificar_cargas() -> IdentificarCargasUseCase:

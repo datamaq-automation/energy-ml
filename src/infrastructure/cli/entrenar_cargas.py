@@ -17,7 +17,6 @@ from src.application.cargas.use_cases.identificar_cargas import IdentificarCarga
 from src.domain.cargas.entities import Carga
 from src.domain.cargas.repositories import CargaRepository
 from src.infrastructure.csv.carga_repository import CsvCargaRepository
-from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import describir_nilm, get_settings
 from src.infrastructure.settings.logger import logger
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
@@ -116,7 +115,7 @@ def main() -> None:
     }
     settings = get_settings().model_copy(update=cambios)
     entrada, salida = Path(settings.MEDICIONES_CSV_DIR), Path(settings.RESULTADOS_DIR)
-    repositorio = CsvMedicionRepository(entrada)
+    repositorio = get_mediciones(settings)
     resultados: CargaRepository = CsvCargaRepository(salida)
     caso_de_uso = IdentificarCargasUseCase(
         mediciones=repositorio,

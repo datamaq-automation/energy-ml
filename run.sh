@@ -30,6 +30,32 @@ ensure_venv() {
     fi
 }
 
+resolver_modo() {
+    # Si $1 es exactamente "dev" o "prod", exporta MEDICIONES_SOURCE y retorna 0
+    # Sino retorna 1 (no consumió argumento)
+    if [[ "$1" == "dev" || "$1" == "prod" ]]; then
+        export MEDICIONES_SOURCE="$1"
+        return 0
+    fi
+    return 1
+}
+
+validar_ssh_prod() {
+    # Preflight: valida conectividad SSH a VPS si está en modo prod
+    if [[ "${MEDICIONES_SOURCE:-local}" == "ssh" ]]; then
+        echo "🔐 Modo PROD: validando conectividad SSH a VPS..."
+        if ! ssh -o BatchMode=yes -o ConnectTimeout=5 vps true 2>/dev/null; then
+            echo "❌ No se puede conectar a VPS 'vps' via SSH."
+            echo "   Asegúrate de:"
+            echo "   1. Estar conectado a Tailscale"
+            echo "   2. Tener ~/.ssh/config con entrada: Host vps ..."
+            echo "   3. Clave pública instalada en VPS"
+            exit 1
+        fi
+        echo "✅ Conectividad SSH validada"
+    fi
+}
+
 COMMAND="${1:-help}"
 
 case "$COMMAND" in
@@ -40,24 +66,25 @@ case "$COMMAND" in
         ;;
     start)
         ensure_venv
-        MODE="${2:-dev}"
-        if [[ "$MODE" != "dev" && "$MODE" != "prod" ]]; then
-            echo "❌ Modo inválido: $MODE (debe ser 'dev' o 'prod')"
-            exit 1
+        if resolver_modo "${2:-dev}"; then
+            shift  # Consumir el argumento dev/prod
         fi
-        if [[ "$MODE" == "prod" ]]; then
+        if [[ "${MEDICIONES_SOURCE:-local}" == "ssh" ]]; then
             echo "🚀 Iniciando servidor FastAPI en modo producción (datos desde VPS)..."
-            export MEDICIONES_SOURCE="ssh"
         else
             echo "🚀 Iniciando servidor FastAPI en modo desarrollo (datos locales)..."
-            export MEDICIONES_SOURCE="local"
         fi
+        validar_ssh_prod  # Exit si SSH falla
         exec "$UVICORN_BIN" src.main:app --host 0.0.0.0 --port 8000
         ;;
     train)
         ensure_venv
-        echo "🧠 Identificando cargas en data/input/ (resultados en data/output/)..."
-        exec "$PYTHON_BIN" -m src.infrastructure.cli.entrenar_cargas "${@:2}"
+        ARGS=("${@:2}")
+        if resolver_modo "${ARGS[0]:-}"; then
+            ARGS=("${ARGS[@]:1}")  # Remover el primer argumento si era dev/prod
+        fi
+        echo "🧠 Identificando cargas (resultados en data/output/)..."
+        exec "$PYTHON_BIN" -m src.infrastructure.cli.entrenar_cargas "${ARGS[@]}"
         ;;
     simulate)
         ensure_venv
@@ -66,13 +93,21 @@ case "$COMMAND" in
         ;;
     evaluate)
         ensure_venv
+        ARGS=("${@:2}")
+        if resolver_modo "${ARGS[0]:-}"; then
+            ARGS=("${ARGS[@]:1}")
+        fi
         echo "📏 Comparando lo identificado con la verdad conocida..."
-        exec "$PYTHON_BIN" -m src.infrastructure.cli.evaluar_cargas "${@:2}"
+        exec "$PYTHON_BIN" -m src.infrastructure.cli.evaluar_cargas "${ARGS[@]}"
         ;;
     supervise)
         ensure_venv
+        ARGS=("${@:2}")
+        if resolver_modo "${ARGS[0]:-}"; then
+            ARGS=("${ARGS[@]:1}")
+        fi
         echo "🎓 Entrenando un clasificador con la verdad de un medidor simulado..."
-        exec "$PYTHON_BIN" -m src.infrastructure.cli.supervisar_cargas "${@:2}"
+        exec "$PYTHON_BIN" -m src.infrastructure.cli.supervisar_cargas "${ARGS[@]}"
         ;;
     test)
         ensure_venv

@@ -16,7 +16,6 @@ from src.infrastructure.cli.entrenar_cargas import (
     TODO_EL_RANGO,
     agregar_parametros_nilm,
 )
-from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.csv.verdad_repository import CsvVerdadRepository
 from src.infrastructure.settings.config import describir_nilm, get_settings
 from src.infrastructure.settings.logger import logger
@@ -50,7 +49,7 @@ def main() -> None:
         )  # fmt: skip
         return
     identificar = IdentificarCargasUseCase(
-        mediciones=CsvMedicionRepository(Path(settings.MEDICIONES_CSV_DIR)),
+        mediciones=get_mediciones(settings),
         agrupador=DbscanAgrupador(),
         umbral_kw=settings.NILM_UMBRAL_KW,
         logger=logger,
