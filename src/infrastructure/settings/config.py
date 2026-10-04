@@ -31,6 +31,10 @@ class Settings(BaseSettings):
 
     # Mediciones: un CSV por medidor (instante, potencia_kw)
     MEDICIONES_CSV_DIR: str = Field(default="data/input")
+    # Fuente de mediciones: "local" (CSV en data/input) o "ssh" (descargar desde VPS)
+    MEDICIONES_SOURCE: str = Field(default="local")
+    # Directorio para cachear mediciones descargadas del VPS (no versionado)
+    MEDICIONES_CACHE_DIR: str = Field(default="data/prod-cache")
     # Resultados del entrenamiento (no versionados)
     RESULTADOS_DIR: str = Field(default="data/output")
     # Eventos reales de los medidores simulados (la "verdad" para evaluar)

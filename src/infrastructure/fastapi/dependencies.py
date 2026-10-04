@@ -29,10 +29,19 @@ from src.infrastructure.sklearn.arbol_clasificador import ArbolClasificador
 from src.infrastructure.sklearn.bayes_clasificador import BayesClasificador
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 from src.infrastructure.sklearn.knn_clasificador import KNNClasificador
+from src.infrastructure.ssh.medicion_repository import SshMedicionRepository
 
 
 def get_mediciones() -> MedicionRepository:
-    return CsvMedicionRepository(Path(get_settings().MEDICIONES_CSV_DIR))
+    settings = get_settings()
+    if settings.MEDICIONES_SOURCE == "ssh":
+        logger.info(
+            "📡 Usando repositorio SSH para mediciones (cache: %s)", settings.MEDICIONES_CACHE_DIR
+        )
+        return SshMedicionRepository(cache_dir=Path(settings.MEDICIONES_CACHE_DIR))
+    else:
+        logger.info("📂 Usando repositorio local para mediciones (%s)", settings.MEDICIONES_CSV_DIR)
+        return CsvMedicionRepository(Path(settings.MEDICIONES_CSV_DIR))
 
 
 def get_identificar_cargas() -> IdentificarCargasUseCase:

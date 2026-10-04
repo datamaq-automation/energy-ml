@@ -40,7 +40,18 @@ case "$COMMAND" in
         ;;
     start)
         ensure_venv
-        echo "🚀 Iniciando servidor FastAPI en modo producción..."
+        MODE="${2:-dev}"
+        if [[ "$MODE" != "dev" && "$MODE" != "prod" ]]; then
+            echo "❌ Modo inválido: $MODE (debe ser 'dev' o 'prod')"
+            exit 1
+        fi
+        if [[ "$MODE" == "prod" ]]; then
+            echo "🚀 Iniciando servidor FastAPI en modo producción (datos desde VPS)..."
+            export MEDICIONES_SOURCE="ssh"
+        else
+            echo "🚀 Iniciando servidor FastAPI en modo desarrollo (datos locales)..."
+            export MEDICIONES_SOURCE="local"
+        fi
         exec "$UVICORN_BIN" src.main:app --host 0.0.0.0 --port 8000
         ;;
     train)
@@ -106,7 +117,10 @@ case "$COMMAND" in
         echo ""
         echo "Comandos disponibles:"
         echo "  dev       : Levanta el servidor FastAPI con reload automático en puerto 8000"
-        echo "  start     : Levanta el servidor FastAPI en modo producción"
+        echo "  start     : Levanta el servidor FastAPI (por defecto dev)"
+        echo "              Opcional: dev (datos locales) o prod (datos desde VPS via SSH)"
+        echo "              Uso: ./run.sh start dev    # datos en data/input/"
+        echo "                   ./run.sh start prod   # datos descargados del VPS"
         echo "  train     : Identifica las cargas de data/input/ y guarda resultados en data/output/"
         echo "              Opcional: medidores y --desde/--hasta (ej. ./run.sh train planta_2_a --desde 2026-09-15)"
         echo "  simulate  : Genera data/input/sintetico.csv y su verdad en data/verdad/ (cargas conocidas)"

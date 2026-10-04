@@ -35,3 +35,7 @@ data/output/*
 # Modelos serializados (joblib)
 data/models/*
 !data/models/.gitkeep
+
+# Cache de mediciones descargadas desde VPS (modo prod)
+data/prod-cache/*
+!data/prod-cache/.gitkeep

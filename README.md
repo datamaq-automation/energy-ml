@@ -50,11 +50,26 @@ src/infrastructure/cli          ./run.sh train: ejecución por consola (resultad
 
 ## Uso
 
+### Servidor FastAPI
+
 ```bash
-./run.sh dev                      # http://localhost:8000  ·  docs en /api/v1/docs
+./run.sh dev                      # Desarrollo: reload automático, datos locales (data/input/)
+./run.sh start dev                # Mismo que arriba
+./run.sh start prod               # Producción: datos descargados del VPS via SSH
+```
+
+**Diferencias:**
+- **dev**: Usa CSVs en `data/input/` (pedagógico, versionado)
+- **prod**: Descarga todos los medidores desde MySQL en VPS, cachea en `data/prod-cache/`
+
+### Entrenamientos y análisis
+
+```bash
 ./run.sh test                     # pytest + Guantelete de Restricciones
 ./run.sh train                    # todos los medidores → data/output/
 ./run.sh train planta_2_a --desde 2026-09-15 --hasta 2026-09-22
+./run.sh simulate                 # Genera data/input/sintetico.csv con cargas conocidas
+./run.sh evaluate                 # Compara NILM vs verdad etiquetada
 ```
 
 ## Evolución (para seguir commit a commit)
