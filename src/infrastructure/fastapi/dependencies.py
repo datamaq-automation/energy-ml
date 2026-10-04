@@ -2,12 +2,18 @@
 
 from pathlib import Path
 
+from fastapi import Request
+
+from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
+from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
-from src.domain.cargas.repositories import MedicionRepository
+from src.domain.cargas.repositories import ClasificadorBayes, ClasificadorKNN, MedicionRepository
 from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.bayes_clasificador import BayesClasificador
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
+from src.infrastructure.sklearn.knn_clasificador import KNNClasificador
 
 
 def get_mediciones() -> MedicionRepository:
@@ -26,3 +32,25 @@ def get_identificar_cargas() -> IdentificarCargasUseCase:
         radio_kw=settings.NILM_EPS_KW,
         min_eventos=settings.NILM_MIN_EVENTOS,
     )
+
+
+def get_clasificador_bayes(request: Request) -> ClasificadorBayes:
+    if hasattr(request.app.state, "modelos") and "bayes" in request.app.state.modelos:
+        return request.app.state.modelos["bayes"]
+    settings = get_settings()
+    return BayesClasificador.cargar_o_entrenar(Path(settings.MODELOS_DIR) / "bayes.joblib")
+
+
+def get_clasificador_knn(request: Request) -> ClasificadorKNN:
+    if hasattr(request.app.state, "modelos") and "knn" in request.app.state.modelos:
+        return request.app.state.modelos["knn"]
+    settings = get_settings()
+    return KNNClasificador.cargar_o_entrenar(Path(settings.MODELOS_DIR) / "knn.joblib")
+
+
+def get_clasificar_bayes_use_case(request: Request) -> ClasificarBayesUseCase:
+    return ClasificarBayesUseCase(clasificador=get_clasificador_bayes(request))
+
+
+def get_clasificar_knn_use_case(request: Request) -> ClasificarKNNUseCase:
+    return ClasificarKNNUseCase(clasificador=get_clasificador_knn(request))

@@ -1,24 +1,15 @@
 """src/main.py — Entrypoint principal de la aplicación FastAPI."""
 
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from src.infrastructure.fastapi.lifespan import lifespan
 from src.infrastructure.fastapi.routers.cargas import router as cargas_router
-from src.infrastructure.settings.config import describir_nilm, get_settings
+from src.infrastructure.fastapi.routers.clasificar import router as clasificar_router
+from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Ciclo de vida de la aplicación: inicialización y cierre ordenado de recursos."""
-    logger.info(describir_nilm(get_settings()))
-    yield
-    logger.info("Aplicación detenida")
 
 
 def create_app() -> FastAPI:
@@ -40,6 +31,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(cargas_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(clasificar_router, prefix=settings.API_V1_PREFIX)
 
     @app.exception_handler(LookupError)
     async def medidor_desconocido(request: Request, exc: LookupError) -> JSONResponse:

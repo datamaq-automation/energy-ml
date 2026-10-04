@@ -31,3 +31,7 @@ tmp/
 # Resultados del entrenamiento: los genera cada alumno
 data/output/*
 !data/output/.gitkeep
+
+# Modelos serializados (joblib)
+data/models/*
+!data/models/.gitkeep

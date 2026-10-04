@@ -169,3 +169,70 @@ class MatrizConfusion:
         """De los ejemplos predichos como esta clase, qué fracción lo era de verdad."""
         predichos = sum(self.celdas[c][clase] for c in self.clases)
         return self.celdas[clase][clase] / predichos if predichos else 0.0
+
+
+@dataclass(frozen=True)
+class TelemetriaTransformador:
+    """Mediciones operativas de un transformador para diagnóstico de contingencias."""
+
+    potencia_kva: float
+    temperatura_aceite_c: float
+    temperatura_devanados_c: float
+    corriente_a: float
+
+    @property
+    def rasgos(self) -> list[float]:
+        return [
+            self.potencia_kva,
+            self.temperatura_aceite_c,
+            self.temperatura_devanados_c,
+            self.corriente_a,
+        ]
+
+
+@dataclass(frozen=True)
+class DiagnosticoContingencia:
+    """Resultado del análisis probabilístico bayesiano de contingencia."""
+
+    estado: str
+    probabilidades: dict[str, float]
+    es_contingencia: bool
+    mensaje: str
+
+
+@dataclass(frozen=True)
+class FirmaElectrica:
+    """Firma de consumo en el espacio de características eléctricas."""
+
+    potencia_activa_kw: float
+    potencia_reactiva_kvar: float
+    thd_corriente: float
+    factor_desbalance: float = 0.0
+
+    @property
+    def rasgos(self) -> list[float]:
+        return [
+            self.potencia_activa_kw,
+            self.potencia_reactiva_kvar,
+            self.thd_corriente,
+            self.factor_desbalance,
+        ]
+
+
+@dataclass(frozen=True)
+class VecinoCercano:
+    """Instancia vecina identificada en el espacio euclidiano/manhattan."""
+
+    clase: str
+    distancia: float
+
+
+@dataclass(frozen=True)
+class DiagnosticoFirma:
+    """Resultado de clasificación basada en vecinos más cercanos (k-NN)."""
+
+    clase_predicha: str
+    confianza: float
+    distancia_promedio: float
+    vecinos: list[VecinoCercano]
+

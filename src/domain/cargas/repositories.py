@@ -3,7 +3,17 @@
 from datetime import datetime
 from typing import Protocol
 
-from src.domain.cargas.entities import Carga, EventoCarga, EventoReal, Medicion, Salto
+from src.domain.cargas.entities import (
+    Carga,
+    DiagnosticoContingencia,
+    DiagnosticoFirma,
+    EventoCarga,
+    EventoReal,
+    FirmaElectrica,
+    Medicion,
+    Salto,
+    TelemetriaTransformador,
+)
 
 
 class MedicionRepository(Protocol):
@@ -52,3 +62,20 @@ class ClasificadorSaltos(Protocol):
     def explicar(self) -> str:
         """Lo que aprendió el modelo, en texto legible."""
         ...
+
+
+class ClasificadorBayes(Protocol):
+    """Clasificador probabilístico de contingencias para transformadores eléctricos."""
+
+    def predecir_contingencia(self, telemetria: TelemetriaTransformador) -> DiagnosticoContingencia: ...
+
+
+class ClasificadorKNN(Protocol):
+    """Clasificador basado en instancias (k-NN) para firmas eléctricas."""
+
+    def clasificar_firma(
+        self,
+        firma: FirmaElectrica,
+        k: int = 5,
+        metrica: str = "euclidean",
+    ) -> DiagnosticoFirma: ...
