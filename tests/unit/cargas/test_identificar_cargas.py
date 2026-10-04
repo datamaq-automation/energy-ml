@@ -71,3 +71,9 @@ def test_avisa_si_una_carga_no_es_on_off() -> None:
     )
     assert [(c.encendidos, c.apagados) for c in res.cargas] == [(1, 3)]
     assert any("no es una sola carga ON/OFF" in w for w in bitacora.warnings)
+
+
+def test_propaga_la_dispersion_de_cada_carga() -> None:
+    req = IdentificarCargasRequest(medidor="Trafo arriba", desde=T0, hasta=T0 + timedelta(days=1))
+    res = pedir([120, 210, 120, 214, 120]).execute(req)
+    assert [c.dispersion_kw for c in res.cargas] == [2.0]

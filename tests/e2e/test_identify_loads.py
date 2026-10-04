@@ -47,6 +47,7 @@ def test_identify_loads_devuelve_cargas() -> None:
                 "ciclos": 1,
                 "ciclos_por_dia": None,
                 "on_off": True,
+                "dispersion_kw": 0.0,
             }
         ]
         assert body["umbral"] == {

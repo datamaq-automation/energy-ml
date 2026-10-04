@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from itertools import pairwise
+from statistics import pstdev
 
 from src.domain.cargas.entities import (
     BarraHistograma,
@@ -125,6 +126,7 @@ def resumir_cargas(eventos: list[EventoCarga], etiquetas: list[int]) -> list[Car
             potencia_tipica_kw=round(sum(abs(e.delta_kw) for e in grupo) / len(grupo), 1),
             encendidos=sum(e.es_encendido for e in grupo),
             apagados=sum(not e.es_encendido for e in grupo),
+            dispersion_kw=round(pstdev(abs(e.delta_kw) for e in grupo), 1),
         )
         for grupo in grupos.values()
     ]

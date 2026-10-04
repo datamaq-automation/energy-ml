@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from src.domain.cargas.entities import EventoCarga, Medicion
+from src.domain.cargas.entities import Carga, EventoCarga, Medicion
 from src.domain.cargas.services import detectar_eventos, resumir_cargas
 
 T0 = datetime(2026, 9, 20, 8, 0)
@@ -121,3 +121,16 @@ def test_estimar_min_eventos_es_uno_por_dia_con_piso() -> None:
     assert estimar_min_eventos(21.3) == 21
     assert estimar_min_eventos(7) == 7
     assert estimar_min_eventos(0.5) == 3
+
+
+def test_dispersion_es_el_desvio_de_los_saltos_del_grupo() -> None:
+    eventos = [EventoCarga(T0, 90), EventoCarga(T0, -92), EventoCarga(T0, 94)]
+    assert resumir_cargas(eventos, [0, 0, 0])[0].dispersion_kw == 1.6
+
+
+def test_dispersion_de_un_solo_evento_es_cero() -> None:
+    assert resumir_cargas([EventoCarga(T0, 90)], [0])[0].dispersion_kw == 0.0
+
+
+def test_carga_sin_dispersion_explicita_vale_cero() -> None:
+    assert Carga(potencia_tipica_kw=90, encendidos=1, apagados=1).dispersion_kw == 0.0

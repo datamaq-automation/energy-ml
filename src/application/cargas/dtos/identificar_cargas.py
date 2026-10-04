@@ -29,6 +29,9 @@ class CargaResponse(BaseModel):
         default=True,
         description="Encendidos y apagados parecidos: se comporta como un equipo ON/OFF",
     )
+    dispersion_kw: float = Field(
+        default=0.0, description="Desvío estándar de |ΔP| de los eventos de la carga, en kW"
+    )
 
 
 class PuntoResponse(BaseModel):

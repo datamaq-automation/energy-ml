@@ -31,6 +31,7 @@ class Carga:
     potencia_tipica_kw: float
     encendidos: int
     apagados: int
+    dispersion_kw: float = 0.0
 
     @property
     def ciclos(self) -> int:
