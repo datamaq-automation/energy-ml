@@ -39,37 +39,82 @@ Este proyecto es un **caso de estudio real** del curso **[Procesamiento de Apren
 Sigue la plantilla [`datamaq-automation/spec`](https://github.com/datamaq-automation/spec): FastAPI + Clean Architecture. La especificación está en [`docs/srs-spec-backend-fastapi.md`](docs/srs-spec-backend-fastapi.md).
 
 ```
-src/domain/cargas/            Medicion, EventoCarga, Carga · detectar_eventos, resumir_cargas · puertos
-src/application/cargas/       IdentificarCargasUseCase + DTOs
-src/infrastructure/csv        CsvMedicionRepository (lee data/input/) · CsvCargaRepository (escribe data/output/)
-src/infrastructure/sklearn    DbscanAgrupador
-src/infrastructure/fastapi    GET /api/v1/identify-loads
-web/energia.html              Vista servida en /
-src/infrastructure/cli          ./run.sh train: ejecución por consola (resultados en data/output/)
+src/domain/cargas/                  Medicion, EventoCarga, Carga · detectar_eventos, resumir_cargas · puertos
+src/application/cargas/             IdentificarCargasUseCase + DTOs (mediciones_fuente, identificar_cargas)
+src/infrastructure/csv/             CsvMedicionRepository (lee data/input/)
+src/infrastructure/ssh/             SshMedicionRepository (descarga del VPS via MySQL+SSH)
+src/infrastructure/mediciones_factory   Factoría: elige adaptador por MEDICIONES_SOURCE
+src/infrastructure/sklearn/         DbscanAgrupador
+src/infrastructure/fastapi/
+  - routers/cargas.py               POST /api/v1/identify-loads
+  - routers/mediciones.py           GET /api/v1/mediciones/fuente (metadatos)
+web/energia.html                    Vista servida en /
+src/infrastructure/cli/             entrenar_cargas.py, evaluar_cargas.py, supervisar_cargas.py
 ```
+
+**Patrón:** Un repositorio abstracto (Protocol), dos adaptadores concretos (CSV local, SSH remoto), factoría con caché.
+
 
 ## Uso
 
 ### Servidor FastAPI
 
+**Modo Desarrollo (local, datos en data/input/):**
 ```bash
-./run.sh dev                      # Desarrollo: reload automático, datos locales (data/input/)
-./run.sh start dev                # Mismo que arriba
-./run.sh start prod               # Producción: datos descargados del VPS via SSH
+./run.sh dev                      # Reload automático, datos locales
+./run.sh start dev                # Mismo que arriba (explícito)
+./run.sh start                    # Default: modo dev
 ```
 
-**Diferencias:**
-- **dev**: Usa CSVs en `data/input/` (pedagógico, versionado)
-- **prod**: Descarga todos los medidores desde MySQL en VPS, cachea en `data/prod-cache/`
+**Modo Producción (remoto, datos del VPS via SSH+MySQL):**
+```bash
+./run.sh start prod               # Descarga datos desde VPS al startup
+```
+
+**Verificar fuente de datos en tiempo real:**
+```bash
+# En modo dev:
+curl http://localhost:8000/api/v1/mediciones/fuente
+# {"fuente": "local", "medidores": ["planta_2_a", "planta_2_b"], "ultima_descarga": null}
+
+# En modo prod (después de sync):
+curl http://localhost:8000/api/v1/mediciones/fuente
+# {"fuente": "ssh", "medidores": [...], "ultima_descarga": {"instante": "2026-10-04T12:30:00", "duracion_segundos": 2.4, "filas_por_medidor": {...}}}
+```
+
+**Diferencias dev vs prod:**
+| Aspecto | Dev | Prod |
+|---------|-----|------|
+| Fuente | CSVs en `data/input/` | MySQL en VPS via SSH+Tailscale |
+| Startup | ~1s (solo levanta app) | ~3s (descarga datos) |
+| Datos | Versionados, pedagógicos | Actualizados, en caché |
+| Fallback | N/A | `data/prod-cache/` persiste entre sesiones |
+| Fail-fast | No | Sí: valida SSH en startup |
 
 ### Entrenamientos y análisis
 
+**Modo desarrollo (local):**
 ```bash
-./run.sh test                     # pytest + Guantelete de Restricciones
-./run.sh train                    # todos los medidores → data/output/
+./run.sh train                    # Todos los medidores, todos los datos
+./run.sh train planta_2_a         # Un medidor
 ./run.sh train planta_2_a --desde 2026-09-15 --hasta 2026-09-22
+```
+
+**Modo producción (datos del VPS):**
+```bash
+./run.sh train prod               # Descarga del VPS, luego entrena
+./run.sh train prod planta_2_a    # Medidor específico del VPS
+```
+
+**Otros comandos:**
+```bash
+./run.sh test                     # pytest + Guantelete de Restricciones Arquitectónicas
 ./run.sh simulate                 # Genera data/input/sintetico.csv con cargas conocidas
 ./run.sh evaluate                 # Compara NILM vs verdad etiquetada
+./run.sh supervise                # Entrena árbol de decisión con verdad etiquetada
+./run.sh lint                     # Verifica estilo con ruff
+./run.sh format                   # Formatea código con ruff
+./run.sh gauntlet                 # Ejecuta 11 reglas de Clean Architecture
 ```
 
 ## Evolución (para seguir commit a commit)

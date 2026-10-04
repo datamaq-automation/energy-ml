@@ -34,9 +34,11 @@ Este proyecto está **vinculado bidireccionalmente** con el curso [Procesamiento
 ## Flujo completo: Lectura → Detección → Clustering → Evaluación
 
 ```
-1. CSV (data/input/mediciones.csv)
+1. Fuente de mediciones (elegible en startup)
+   ├─ Dev: CSV (data/input/mediciones.csv) — CsvMedicionRepository
+   └─ Prod: VPS (MySQL via SSH+Tailscale) — SshMedicionRepository
    ↓
-2. DeteccionEventosUseCase: Cambios en potencia → lista de eventos
+2. IdentificarCargasUseCase: Cambios en potencia → eventos → cargas
    ↓
 3. ClusteringUseCase: DBSCAN agrupa eventos por firma
    ↓
@@ -46,6 +48,20 @@ Este proyecto está **vinculado bidireccionalmente** con el curso [Procesamiento
 ```
 
 Cada paso corresponde a una o más lecciones del curso.
+
+## Patrón: Adaptadores para múltiples fuentes
+
+Energy-ml implementa el **patrón Adaptador (Adapter Pattern)** de SOLID:
+
+- **Puerto (interfaz):** `src/domain/cargas/repositories.py:MedicionRepository` (Protocol)
+- **Adaptador 1:** `src/infrastructure/csv/medicion_repository.py:CsvMedicionRepository` (archivo local)
+- **Adaptador 2:** `src/infrastructure/ssh/medicion_repository.py:SshMedicionRepository` (VPS remoto)
+- **Factoría:** `src/infrastructure/mediciones_factory.py` (elige adaptador en startup)
+- **Inyección:** `src/infrastructure/fastapi/dependencies.py:get_mediciones()` (proporciona el adaptador activo)
+
+**Lección:** El dominio y la aplicación no saben si los datos vienen de CSV o SSH; cambiar fuentes es cambiar una línea de configuración, sin tocar el código de negocio.
+
+Usar: `./run.sh start dev` (CSV local) vs `./run.sh start prod` (SSH VPS).
 
 ## Recursos
 
