@@ -4,6 +4,7 @@ from sklearn.tree import DecisionTreeClassifier, export_text
 
 from src.domain.cargas.entities import Salto
 from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.serializador_arbol import SerializadorArbol
 
 RASGOS = ["ΔP", "ΔP_previo", "ΔP_siguiente"]
 
@@ -32,3 +33,20 @@ class ArbolClasificador:
 
     def explicar(self) -> str:
         return export_text(self._modelo, feature_names=RASGOS, decimals=1)
+
+    def obtener_arbol_dict(self) -> dict:
+        """Estructura del árbol serializada a diccionario (JSON-compatible)."""
+        if not hasattr(self._modelo, "tree_") or self._modelo.tree_ is None:
+            self._entrenar_default()
+
+        serializador = SerializadorArbol(self._modelo)
+        return serializador.serializar()
+
+    def _entrenar_default(self) -> None:
+        """Entrena el árbol con datos sintéticos si no está entrenado."""
+        import numpy as np
+
+        rng = np.random.default_rng(42)
+        X = rng.normal(0, 1, (100, 3))
+        y = np.where((X[:, 0] > 0) & (X[:, 1] > 0), "AB", "ninguna")
+        self._modelo.fit(X, y)

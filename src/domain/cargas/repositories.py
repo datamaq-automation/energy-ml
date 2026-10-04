@@ -65,6 +65,10 @@ class ClasificadorSaltos(Protocol):
         """Lo que aprendió el modelo, en texto legible."""
         ...
 
+    def obtener_arbol_dict(self) -> dict:
+        """Estructura del árbol de decisión como diccionario (JSON-serializable)."""
+        ...
+
 
 class ClasificadorBayes(Protocol):
     """Clasificador probabilístico de contingencias para transformadores eléctricos."""

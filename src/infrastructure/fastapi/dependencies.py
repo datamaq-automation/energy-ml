@@ -6,15 +6,21 @@ from fastapi import Request
 
 from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
+from src.application.cargas.use_cases.explicar_arbol import ExplicarArbolUseCase
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.application.cargas.use_cases.obtener_metricas import (
     MatrizConfusionRepository,
     ObtenerMetricasUseCase,
 )
-from src.domain.cargas.repositories import ClasificadorBayes, ClasificadorKNN, MedicionRepository
+from src.domain.cargas.repositories import (
+    ClasificadorBayes,
+    ClasificadorKNN,
+    MedicionRepository,
+)
 from src.infrastructure.csv.medicion_repository import CsvMedicionRepository
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.arbol_clasificador import ArbolClasificador
 from src.infrastructure.sklearn.bayes_clasificador import BayesClasificador
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador
 from src.infrastructure.sklearn.knn_clasificador import KNNClasificador
@@ -67,3 +73,11 @@ def get_obtener_metricas_use_case(request: Request) -> ObtenerMetricasUseCase:
         repo = MatrizConfusionRepository()
         request.app.state.matriz_confusion_repo = repo
     return ObtenerMetricasUseCase(matriz_confusion_repo=repo)
+
+
+def get_explicar_arbol_use_case(request: Request) -> ExplicarArbolUseCase:
+    if hasattr(request.app.state, "arbol_clasificador"):
+        clasificador = request.app.state.arbol_clasificador
+    else:
+        clasificador = ArbolClasificador()
+    return ExplicarArbolUseCase(clasificador=clasificador)
