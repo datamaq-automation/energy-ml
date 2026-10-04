@@ -11,6 +11,11 @@ from src.application.cargas.dtos.clasificacion import (
     ClassifyKNNResponse,
 )
 from src.application.cargas.dtos.explicabilidad import ExplicarArbolResponse
+from src.application.cargas.dtos.mcp import (
+    RespuestaMCPError,
+    RespuestaMCPExito,
+    SolicitudMCP,
+)
 from src.application.cargas.dtos.metricas import MetricasResponse
 from src.application.cargas.dtos.version_space import (
     EstadoVersionSpaceResponse,
@@ -75,3 +80,14 @@ def actualizar_version_space(
 ) -> EstadoVersionSpaceResponse:
     """Actualiza el espacio de versiones con un nuevo ejemplo etiquetado."""
     return caso_de_uso.execute(request)
+
+
+@router.post("/mcp", response_model=RespuestaMCPExito | RespuestaMCPError)
+def servidor_mcp(request_data: SolicitudMCP) -> RespuestaMCPExito | RespuestaMCPError:
+    """Servidor JSON-RPC 2.0 con herramientas locales para interactuar con el modelo."""
+    from src.application.cargas.use_cases.servidor_mcp import ServidorMCP
+    from src.infrastructure.sklearn.arbol_clasificador import ArbolClasificador
+
+    clasificador = ArbolClasificador()
+    servidor = ServidorMCP(clasificador)
+    return servidor.procesar_solicitud(request_data)
