@@ -113,6 +113,11 @@ class SshMedicionRepository:
 
             medidor, instante, potencia_w = partes[0], partes[1], partes[2]
 
+            # Solo exportar medidores conocidos (anonimización)
+            if medidor not in self.ALIASES_CONOCIDOS:
+                logger.debug("Medidor no mapeado (ignorado): %s", medidor)
+                continue
+
             W_POR_KW = 1000.0
             instante_iso = instante.replace(" ", "T")
             potencia_kw = round(float(potencia_w) / W_POR_KW, 4)
