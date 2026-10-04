@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi import Request
 
+from src.application.cargas.use_cases.actualizar_version_space import ActualizarVersionSpaceUseCase
 from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
 from src.application.cargas.use_cases.explicar_arbol import ExplicarArbolUseCase
@@ -81,3 +82,7 @@ def get_explicar_arbol_use_case(request: Request) -> ExplicarArbolUseCase:
     else:
         clasificador = ArbolClasificador()
     return ExplicarArbolUseCase(clasificador=clasificador)
+
+
+def get_actualizar_version_space_use_case(request: Request) -> ActualizarVersionSpaceUseCase:
+    return ActualizarVersionSpaceUseCase()

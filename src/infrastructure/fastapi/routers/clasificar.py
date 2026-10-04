@@ -12,11 +12,17 @@ from src.application.cargas.dtos.clasificacion import (
 )
 from src.application.cargas.dtos.explicabilidad import ExplicarArbolResponse
 from src.application.cargas.dtos.metricas import MetricasResponse
+from src.application.cargas.dtos.version_space import (
+    EstadoVersionSpaceResponse,
+    PasoVersionSpaceRequest,
+)
+from src.application.cargas.use_cases.actualizar_version_space import ActualizarVersionSpaceUseCase
 from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
 from src.application.cargas.use_cases.explicar_arbol import ExplicarArbolUseCase
 from src.application.cargas.use_cases.obtener_metricas import ObtenerMetricasUseCase
 from src.infrastructure.fastapi.dependencies import (
+    get_actualizar_version_space_use_case,
     get_clasificar_bayes_use_case,
     get_clasificar_knn_use_case,
     get_explicar_arbol_use_case,
@@ -58,3 +64,14 @@ def explicar_arbol(
 ) -> ExplicarArbolResponse:
     """Árbol de decisión CART serializado: estructura recursiva de nodos de decisión y hojas."""
     return caso_de_uso.execute()
+
+
+@router.post("/version-space/step", response_model=EstadoVersionSpaceResponse)
+def actualizar_version_space(
+    caso_de_uso: Annotated[
+        ActualizarVersionSpaceUseCase, Depends(get_actualizar_version_space_use_case)
+    ],
+    request: PasoVersionSpaceRequest,
+) -> EstadoVersionSpaceResponse:
+    """Actualiza el espacio de versiones con un nuevo ejemplo etiquetado."""
+    return caso_de_uso.execute(request)
