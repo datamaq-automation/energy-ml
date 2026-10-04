@@ -178,6 +178,32 @@ class SshMedicionRepository:
             p.stem for p in self._cache_dir.glob("*.csv") if p.stem in nombres_anonimizados
         )
 
+    def _resolver_medidor(self, medidor: str) -> str:
+        """Resuelve nombre de medidor (alias o anonimizado) al nombre real.
+
+        Args:
+            medidor: Alias conocido, nombre real, o nombre anonimizado
+
+        Returns:
+            Nombre real (clave de ALIASES_CONOCIDOS)
+
+        Raises:
+            LookupError: Si no se encuentra el medidor
+        """
+        # Por alias conocido o nombre real
+        for real, anonimizado in self.ALIASES_CONOCIDOS.items():
+            if Path(anonimizado).stem == medidor or real == medidor:
+                return real
+
+        # Por slug generado
+        for real in self.ALIASES_CONOCIDOS.keys():
+            if self._nombre_archivo(real).startswith(medidor):
+                return real
+
+        disponibles = ", ".join(Path(v).stem for v in self.ALIASES_CONOCIDOS.values())
+        logger.error("Medidor desconocido: %s (disponibles: %s)", medidor, disponibles)
+        raise LookupError(f"Medidor desconocido: {medidor}")
+
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]:
         """Recupera mediciones en rango temporal.
 
@@ -199,24 +225,8 @@ class SshMedicionRepository:
         if not self._sincronizado:
             self.sincronizar()
 
-        # Buscar medidor real (por si alguien pasó el alias)
-        medidor_real = None
-        for real, anonimizado in self.ALIASES_CONOCIDOS.items():
-            if Path(anonimizado).stem == medidor or real == medidor:
-                medidor_real = real
-                break
-
-        # También intentar como slug generado
-        if not medidor_real:
-            for real in self.ALIASES_CONOCIDOS.keys():
-                if self._nombre_archivo(real).startswith(medidor):
-                    medidor_real = real
-                    break
-
-        if not medidor_real:
-            disponibles = ", ".join(Path(v).stem for v in self.ALIASES_CONOCIDOS.values())
-            logger.error("Medidor desconocido: %s (disponibles: %s)", medidor, disponibles)
-            raise LookupError(f"Medidor desconocido: {medidor}")
+        # Resolver el nombre real del medidor
+        medidor_real = self._resolver_medidor(medidor)
 
         ruta = self._cache_dir / self._nombre_archivo(medidor_real)
         if not ruta.exists():
