@@ -17,6 +17,7 @@ from src.infrastructure.cli.entrenar_cargas import (
     agregar_parametros_nilm,
 )
 from src.infrastructure.csv.verdad_repository import CsvVerdadRepository
+from src.infrastructure.mediciones_factory import get_mediciones
 from src.infrastructure.settings.config import describir_nilm, get_settings
 from src.infrastructure.settings.logger import logger
 from src.infrastructure.sklearn.dbscan_agrupador import DbscanAgrupador

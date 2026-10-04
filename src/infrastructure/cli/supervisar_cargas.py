@@ -12,6 +12,7 @@ from pathlib import Path
 from src.application.cargas.use_cases.entrenar_clasificador import EntrenarClasificadorUseCase
 from src.infrastructure.cli.entrenar_cargas import _entero_positivo
 from src.infrastructure.csv.verdad_repository import CsvVerdadRepository
+from src.infrastructure.mediciones_factory import get_mediciones
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
 from src.infrastructure.sklearn.arbol_clasificador import ArbolClasificador
