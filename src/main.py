@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
 
     app.include_router(cargas_router, prefix=settings.API_V1_PREFIX)
     app.include_router(clasificar_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(mediciones_router, prefix=settings.API_V1_PREFIX)
 
     @app.exception_handler(LookupError)
     async def medidor_desconocido(request: Request, exc: LookupError) -> JSONResponse:

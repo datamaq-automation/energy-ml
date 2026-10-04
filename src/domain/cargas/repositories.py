@@ -19,6 +19,10 @@ from src.domain.cargas.entities import (
 class MedicionRepository(Protocol):
     """Fuente de series de potencia por medidor."""
 
+    def medidores(self) -> list[str]:
+        """Retorna lista de medidores disponibles."""
+        ...
+
     def listar(self, medidor: str, desde: datetime, hasta: datetime) -> list[Medicion]: ...
 
 
