@@ -31,13 +31,14 @@ ensure_venv() {
 }
 
 resolver_modo() {
-    # Si $1 es exactamente "dev" o "prod", exporta MEDICIONES_SOURCE y retorna 0
-    # Sino retorna 1 (no consumió argumento)
-    if [[ "$1" == "dev" || "$1" == "prod" ]]; then
-        export MEDICIONES_SOURCE="$1"
-        return 0
-    fi
-    return 1
+    # Traduce el modo a la fuente que entiende la app (settings.MEDICIONES_SOURCE):
+    # "dev" -> "local" (CSV en data/input), "prod" -> "ssh" (VPS). Retorna 1 si $1 no es un modo.
+    case "$1" in
+        dev)  export MEDICIONES_SOURCE="local" ;;
+        prod) export MEDICIONES_SOURCE="ssh" ;;
+        *)    return 1 ;;
+    esac
+    return 0
 }
 
 validar_ssh_prod() {
@@ -67,7 +68,7 @@ case "$COMMAND" in
     start)
         ensure_venv
         if resolver_modo "${2:-dev}"; then
-            shift  # Consumir el argumento dev/prod
+            :  # resolver_modo ya exportó MEDICIONES_SOURCE
         fi
         if [[ "${MEDICIONES_SOURCE:-local}" == "ssh" ]]; then
             echo "🚀 Iniciando servidor FastAPI en modo producción (datos desde VPS)..."
