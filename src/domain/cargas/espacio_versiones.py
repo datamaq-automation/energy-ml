@@ -36,6 +36,10 @@ class Hipotesis:
 
     restricciones: dict[str, Restriccion]
 
+    def __hash__(self) -> int:
+        """El dict no es hasheable; las fronteras S y G son sets, así que se hashea su contenido."""
+        return hash(frozenset(self.restricciones.items()))
+
     def es_universo(self) -> bool:
         """Hipótesis más general: acepta todo."""
         return all(r.es_universo() for r in self.restricciones.values())
@@ -61,16 +65,13 @@ class Hipotesis:
             if vieja_restriccion.es_universo():
                 nuevas_restricciones[rasgo] = Restriccion(rasgo, valor, valor)
             else:
+                # Un lado sin límite sigue sin límite: ya cubre el valor.
                 min_val = vieja_restriccion.minimo
                 max_val = vieja_restriccion.maximo
                 if min_val is not None:
                     min_val = min(min_val, valor)
-                else:
-                    min_val = valor
                 if max_val is not None:
                     max_val = max(max_val, valor)
-                else:
-                    max_val = valor
                 nuevas_restricciones[rasgo] = Restriccion(rasgo, min_val, max_val)
         return Hipotesis(nuevas_restricciones)
 
