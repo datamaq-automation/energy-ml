@@ -13,19 +13,20 @@ from src.application.cargas.use_cases.consultar_maquinas_inferidas import (
 )
 
 
-class MockRepositorioCacheMaquinas:
-    """Mock de repositorio para testing."""
+class MockMaquinasCache:
+    """Mock simple de cache para testing."""
 
     def __init__(self, datos: dict | None = None):
-        self.datos = datos
+        self._cache = {}
+        if datos:
+            dispositivo_id = datos.get("dispositivo_id", "test")
+            self._cache[dispositivo_id] = datos
 
     def obtener(self, dispositivo_id: str) -> dict | None:
-        if self.datos and self.datos.get("dispositivo_id") == dispositivo_id:
-            return self.datos
-        return None
+        return self._cache.get(dispositivo_id)
 
     def guardar(self, dispositivo_id: str, datos: dict) -> None:
-        self.datos = {**datos, "dispositivo_id": dispositivo_id}
+        self._cache[dispositivo_id] = {**datos, "dispositivo_id": dispositivo_id}
 
 
 # ============ DTO TESTS (T1) ============
@@ -160,7 +161,7 @@ class TestConsultarMaquinasInferidaUseCase:
 
     def test_calcular_confianza_alta(self):
         """Confianza alta si dispersion < 2.0, ciclos >= 10, encendidos >= 50."""
-        use_case = ConsultarMaquinasInferidaUseCase(MockRepositorioCacheMaquinas())
+        use_case = ConsultarMaquinasInferidaUseCase(MockMaquinasCache())
         confianza = use_case._calcular_confianza(
             dispersion_kw=1.5,
             ciclos=15,
@@ -170,7 +171,7 @@ class TestConsultarMaquinasInferidaUseCase:
 
     def test_calcular_confianza_media(self):
         """Confianza media si dispersion < 5.0, ciclos >= 5, encendidos >= 20."""
-        use_case = ConsultarMaquinasInferidaUseCase(MockRepositorioCacheMaquinas())
+        use_case = ConsultarMaquinasInferidaUseCase(MockMaquinasCache())
         confianza = use_case._calcular_confianza(
             dispersion_kw=3.0,
             ciclos=8,
@@ -180,7 +181,7 @@ class TestConsultarMaquinasInferidaUseCase:
 
     def test_calcular_confianza_baja(self):
         """Confianza baja si no cumple criterios de alta ni media."""
-        use_case = ConsultarMaquinasInferidaUseCase(MockRepositorioCacheMaquinas())
+        use_case = ConsultarMaquinasInferidaUseCase(MockMaquinasCache())
         confianza = use_case._calcular_confianza(
             dispersion_kw=6.0,  # > 5.0
             ciclos=2,  # < 5
@@ -190,7 +191,7 @@ class TestConsultarMaquinasInferidaUseCase:
 
     def test_ejecutar_sin_datos_cachados_raise(self):
         """RuntimeError si no hay datos en cache."""
-        repo = MockRepositorioCacheMaquinas(None)
+        repo = MockMaquinasCache(None)
         use_case = ConsultarMaquinasInferidaUseCase(repo)
 
         with pytest.raises(RuntimeError, match="Sin análisis NILM"):
@@ -216,7 +217,7 @@ class TestConsultarMaquinasInferidaUseCase:
                 }
             ],
         }
-        repo = MockRepositorioCacheMaquinas(datos_cache)
+        repo = MockMaquinasCache(datos_cache)
         use_case = ConsultarMaquinasInferidaUseCase(repo)
 
         resultado = use_case.ejecutar("planta_2_a")
@@ -246,7 +247,7 @@ class TestConsultarMaquinasInferidaUseCase:
                 }
             ],
         }
-        repo = MockRepositorioCacheMaquinas(datos_cache)
+        repo = MockMaquinasCache(datos_cache)
         use_case = ConsultarMaquinasInferidaUseCase(repo)
 
         resultado = use_case.ejecutar("planta_2_b")
@@ -273,7 +274,7 @@ class TestConsultarMaquinasInferidaUseCase:
                 }
             ],
         }
-        repo = MockRepositorioCacheMaquinas(datos_cache)
+        repo = MockMaquinasCache(datos_cache)
         use_case = ConsultarMaquinasInferidaUseCase(repo)
 
         resultado = use_case.ejecutar("planta_2_c")
@@ -310,7 +311,7 @@ class TestConsultarMaquinasInferidaUseCase:
                 },
             ],
         }
-        repo = MockRepositorioCacheMaquinas(datos_cache)
+        repo = MockMaquinasCache(datos_cache)
         use_case = ConsultarMaquinasInferidaUseCase(repo)
 
         resultado = use_case.ejecutar("planta_2_a")

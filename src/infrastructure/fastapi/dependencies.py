@@ -4,9 +4,14 @@ from pathlib import Path
 
 from fastapi import Request
 
-from src.application.cargas.use_cases.actualizar_version_space import ActualizarVersionSpaceUseCase
+from src.application.cargas.use_cases.actualizar_version_space import (
+    ActualizarVersionSpaceUseCase,
+)
 from src.application.cargas.use_cases.clasificar_bayes import ClasificarBayesUseCase
 from src.application.cargas.use_cases.clasificar_knn import ClasificarKNNUseCase
+from src.application.cargas.use_cases.consultar_maquinas_inferidas import (
+    ConsultarMaquinasInferidaUseCase,
+)
 from src.application.cargas.use_cases.explicar_arbol import ExplicarArbolUseCase
 from src.application.cargas.use_cases.identificar_cargas import IdentificarCargasUseCase
 from src.application.cargas.use_cases.inducir_reglas import (
@@ -22,6 +27,7 @@ from src.domain.cargas.repositories import (
     ClasificadorKNN,
     MedicionRepository,
 )
+from src.infrastructure.cache.maquinas_cache import MaquinasCacheMemoria
 from src.infrastructure.mediciones_factory import get_mediciones as factory_get_mediciones
 from src.infrastructure.settings.config import get_settings
 from src.infrastructure.settings.logger import logger
@@ -107,3 +113,15 @@ def get_obtener_regla_use_case(request: Request) -> ObtenerReglaUseCase:
     else:
         clasificador = ArbolClasificador()
     return ObtenerReglaUseCase(clasificador=clasificador)
+
+
+def obtener_use_case_consultar_maquinas(
+    request: Request,
+) -> ConsultarMaquinasInferidaUseCase:
+    """Dependencia para el UseCase de consultar máquinas inferidas.
+
+    Mantiene cache persistente en app.state para queries sin reiniciación.
+    """
+    if not hasattr(request.app.state, "maquinas_cache"):
+        request.app.state.maquinas_cache = MaquinasCacheMemoria()
+    return ConsultarMaquinasInferidaUseCase(cache_repo=request.app.state.maquinas_cache)

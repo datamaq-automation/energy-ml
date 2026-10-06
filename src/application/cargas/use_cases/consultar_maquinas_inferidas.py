@@ -1,12 +1,20 @@
 """src/application/cargas/use_cases/consultar_maquinas_inferidas.py — Consultar máquinas inferidas por NILM."""
 
 from datetime import datetime
+from typing import Protocol
 
 from src.application.cargas.dtos.maquinas_inferidas import (
     ListaMaquinasInferidaDTO,
     MaquinaInferidaDTO,
 )
-from src.domain.cargas.repositories import RepositorioCacheMaquinas
+
+
+class CacheInterfaz(Protocol):
+    """Interfaz de cache (MVP: definida localmente, sin puerto en dominio)."""
+
+    def obtener(self, dispositivo_id: str) -> dict | None: ...
+
+    def guardar(self, dispositivo_id: str, datos: dict) -> None: ...
 
 
 class ConsultarMaquinasInferidaUseCase:
@@ -24,7 +32,7 @@ class ConsultarMaquinasInferidaUseCase:
         "encendidos_min": 20,
     }
 
-    def __init__(self, cache_repo: RepositorioCacheMaquinas):
+    def __init__(self, cache_repo: CacheInterfaz):
         self.cache_repo = cache_repo
 
     def ejecutar(self, dispositivo_id: str) -> ListaMaquinasInferidaDTO:

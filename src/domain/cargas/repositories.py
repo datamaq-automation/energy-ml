@@ -95,15 +95,3 @@ class ClasificadorKNN(Protocol):
         k: int = 5,
         metrica: str = "euclidean",
     ) -> DiagnosticoFirma: ...
-
-
-class RepositorioCacheMaquinas(Protocol):
-    """Cache de máquinas inferidas por NILM: consultable por dispositivo."""
-
-    def obtener(self, dispositivo_id: str) -> dict | None:
-        """Retorna dict con maquinas_inferidas y actualizado_en, o None si no existe."""
-        ...
-
-    def guardar(self, dispositivo_id: str, datos: dict) -> None:
-        """Guarda resultado de análisis NILM para un dispositivo."""
-        ...
