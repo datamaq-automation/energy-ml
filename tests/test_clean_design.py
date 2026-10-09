@@ -94,6 +94,11 @@ def get_base_class_names(node: ast.ClassDef) -> list[str]:
     return names
 
 
+def get_method_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[str, ...]:
+    """Retorna nombre y parámetros posicionales (sin self) de un método."""
+    return (node.name, *(arg.arg for arg in node.args.args if arg.arg != "self"))
+
+
 def is_middle_man_method(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
     """Detecta si un método se limita a delegar en self.<attr>.<method>(*args) sin lógica."""
     if node.name.startswith("__") and node.name.endswith("__"):
@@ -169,6 +174,9 @@ def scan_clean_design(
 
     all_classes: dict[str, list[dict[str, Any]]] = {}
     interface_defs: dict[str, dict[str, Any]] = {}
+    # Firmas declaradas en Protocol/ABC de src/: un adaptador que las implementa
+    # (aun sin heredar, por tipado estructural) no es un pasamanos.
+    interface_signatures: set[tuple[str, ...]] = set()
     inheritance_graph: dict[str, list[str]] = {}
 
     # 0. Grafo de Alcance (Reachability Graph de Archivos)
@@ -287,6 +295,11 @@ def scan_clean_design(
 
                         if info["is_interface"] and not info["is_test"]:
                             interface_defs[node.name] = info
+                            interface_signatures.update(
+                                get_method_signature(n)
+                                for n in node.body
+                                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                            )
 
     # Chequeo 1: GHOST_INTERFACE (Single-Implementation Abstractions)
     for iface_name, iface_info in interface_defs.items():
@@ -425,7 +438,10 @@ def scan_clean_design(
 
                     for class_node in node.body:
                         if isinstance(class_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                            if is_middle_man_method(class_node):
+                            if (
+                                is_middle_man_method(class_node)
+                                and get_method_signature(class_node) not in interface_signatures
+                            ):
                                 issues.append(
                                     DesignIssue(
                                         code="MIDDLE_MAN_METHOD",
@@ -482,6 +498,66 @@ def test_no_critical_clean_design_violations():
     assert not issues, (
         f"Se detectaron {len(issues)} violaciones de diseño limpio / código muerto: {issues}"
     )
+
+
+def _middle_man_symbols(tmp_path: Path, files: dict[str, str]) -> set[str]:
+    """Escanea un proyecto sintético y retorna los símbolos marcados como MIDDLE_MAN_METHOD."""
+    for rel, content in files.items():
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    results = scan_clean_design(root_path=tmp_path)
+    return {i["symbol"] for i in results["issues"] if i["code"] == "MIDDLE_MAN_METHOD"}
+
+
+_PUERTO = """
+from typing import Protocol
+
+
+class Puerto(Protocol):
+    def obtener(self, clave: str) -> dict | None: ...
+"""
+
+
+def test_middle_man_detecta_pasamanos_real(tmp_path: Path):
+    """Regresión: un pasamanos sin interfaz que lo exija sigue marcándose."""
+    adaptador = """
+class Envoltorio:
+    def __init__(self, interno):
+        self._interno = interno
+
+    def procesar(self, valor):
+        return self._interno.procesar(valor)
+"""
+    assert _middle_man_symbols(tmp_path, {"src/adaptador.py": adaptador}) == {"Envoltorio.procesar"}
+
+
+def test_middle_man_exime_metodo_de_interfaz_estructural(tmp_path: Path):
+    """Un método cuya firma declara un Protocol del proyecto implementa el puerto."""
+    adaptador = """
+class CacheMemoria:
+    def __init__(self):
+        self._cache = {}
+
+    def obtener(self, clave: str) -> dict | None:
+        return self._cache.get(clave)
+"""
+    files = {"src/puerto.py": _PUERTO, "src/adaptador.py": adaptador}
+    assert _middle_man_symbols(tmp_path, files) == set()
+
+
+def test_middle_man_no_exime_mismo_nombre_con_otra_firma(tmp_path: Path):
+    """Coincidir solo en el nombre no alcanza: la firma también debe coincidir."""
+    adaptador = """
+class CacheMemoria:
+    def __init__(self):
+        self._cache = {}
+
+    def obtener(self, otra_clave: str) -> dict | None:
+        return self._cache.get(otra_clave)
+"""
+    files = {"src/puerto.py": _PUERTO, "src/adaptador.py": adaptador}
+    assert _middle_man_symbols(tmp_path, files) == {"CacheMemoria.obtener"}
 
 
 def main() -> None:
