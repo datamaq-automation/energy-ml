@@ -2,6 +2,8 @@
 
 Este repo es un caso de estudio real del curso de Aprendizaje Automático (ISFT N° 199, Tigre). Contribuir acá es la forma de practicar lo que aprendés **y** la forma en que evaluamos tu participación.
 
+> **Sobre los casos de estudio.** El núcleo de este repo es **ML aplicado a energía** (identificación de cargas, NILM). Los casos de otros dominios (logística, ventas, educación, salud, medio ambiente, etc.) son **orientativos**: sirven para practicar la metodología, no son soluciones validadas por especialistas de esos campos. Sus resultados no deben usarse para tomar decisiones reales. En los casos que involucran personas (educación, salud), cualquier uso real exigiría revisión humana y de especialistas.
+
 ## 1. Qué cuenta como contribución
 
 | Tipo | Ejemplos |
