@@ -8,9 +8,25 @@ Este repo es un caso de estudio real del curso de Aprendizaje Automático (ISFT 
 |---|---|
 | **Pull Request (PR)** | Resolver un issue, agregar un caso de estudio, corregir un error, mejorar la documentación |
 | **Issue** | Proponer un caso nuevo, plantear una duda concreta con contexto, reportar un error |
-| **Comentario** | Responder una duda de un compañero, revisar un PR, aportar un dato o una fuente |
+| **Comentario** | Responder una duda de un compañero, revisar un PR, aportar un dato o una fuente, plantear un bloqueo |
 
 Cada aporte cuenta, aunque sea chico. Se mira la **calidad**, no la cantidad: un comentario que hace avanzar la discusión vale más que diez que dicen "buen trabajo".
+
+### Qué va en cada lugar
+
+Un issue es un espacio **público y compartido**: lo lee todo el curso. Para que sea útil, cada cosa va en su lugar:
+
+| Qué | Dónde |
+|---|---|
+| Notas, plan y reportes de cada paso | Un archivo local o el README de tu rama |
+| La historia de lo que hiciste | Commits con mensajes claros |
+| Mostrar tu trabajo y recibir revisión | Un PR a `develop`; puede ser en borrador (*Draft*) |
+| Una duda, un bloqueo o una decisión a confirmar | Un comentario en el issue |
+| El resultado final y sus limitaciones | La descripción del PR |
+
+**Regla práctica:** un reporte de avance en un issue sirve cuando enlaza a trabajo que los demás pueden verificar (un commit, una rama o un PR). Si tu trabajo está solo en tu computadora, el reporte va a tu cuaderno. Y apenas tengas tu primer commit, abrí un PR en borrador: es el lugar natural para mostrar el avance.
+
+**Si usás un agente de IA:** los issues le piden que proponga un plan y que reporte al terminar cada tarea. Ese reporte es para tu conversación con el agente y, al final, para la descripción del PR. No hace falta publicarlo paso a paso en el issue. Vos decidís qué se hace público.
 
 ## 2. Las ramas: por qué existe `develop`
 
