@@ -10,6 +10,8 @@ dependencies = [
     "pydantic>=2.9.0",
     "pydantic-settings>=2.5.0",
     "scikit-learn>=1.5",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
@@ -54,4 +56,4 @@ ignore = [
 extend-immutable-calls = ["fastapi.Depends"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["src"]
+known-first-party = ["src", "educacion"]

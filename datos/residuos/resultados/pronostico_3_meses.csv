@@ -1,0 +1,10 @@
+mes,modelo,pronostico_toneladas
+2026-10,Persistencia,6122.97
+2026-11,Persistencia,6122.97
+2026-12,Persistencia,6122.97
+2026-10,Regresión lineal,6242.83
+2026-11,Regresión lineal,6736.11
+2026-12,Regresión lineal,5200.49
+2026-10,Bosque aleatorio,6073.14
+2026-11,Bosque aleatorio,6308.95
+2026-12,Bosque aleatorio,5021.38
