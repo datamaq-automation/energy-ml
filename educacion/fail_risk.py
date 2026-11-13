@@ -1,4 +1,4 @@
-"""educacion/fail_risk.py — Tarea A: agrupamiento no supervisado (Issue #5).
+"""educacion/fail_risk.py — Tareas A (agrupamiento) y B (clasificación) — Issue #5.
 
 Caso de estudio: "Riesgo de desaprobar una materia: agrupamiento, predicción y equidad".
 
@@ -7,7 +7,12 @@ solo G1 + variables de contexto. Por eso G2 NO entra en ninguna tarea y G3
 se usa exclusivamente como etiqueta (nunca como variable de entrada).
 
 Reglas de la sección 4 del issue aplicadas aquí:
-  - Cero fuga de datos: las variables de agrupamiento no incluyen G2 ni G3.
+  - Cero fuga de datos: G3 solo construye la etiqueta; G2 no existe aquí.
+  - Split 80/20 estratificado con random_state=42 ANTES de transformar:
+    escaladores y codificadores viven dentro del Pipeline y solo se ajustan
+    con los datos de train.
+  - Métricas adecuadas: precisión, recall, F1 y matriz de confusión sobre
+    "desaprobado" (clase positiva = 1); accuracy no alcanza por sí solo.
   - Semilla fija: random_state = SEED (42).
   - Privacidad: en pantalla solo se imprimen agregados, nunca filas individuales.
   - Sin rutas absolutas: DATA_PATH se deriva de __file__.
@@ -20,8 +25,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    precision_recall_fscore_support,
+    silhouette_score,
+)
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 #: Semilla fija para todos los estimadores (regla 7 de la sección 4).
 SEED = 42
@@ -39,6 +54,57 @@ K_MAX = 6
 
 #: Umbral de la etiqueta: desaprobado = G3 < 10 (sección 2 del issue).
 FAIL_THRESHOLD = 10
+
+#: Variables permitidas para la Tarea B (sección 2 del issue): las 18 coherentes
+#: con el momento de predicción declarado — sin G2 (desconocida) ni G3 (etiqueta).
+MODEL_FEATURES: tuple[str, ...] = (
+    "G1",
+    "studytime",
+    "failures",
+    "absences",
+    "higher",
+    "Medu",
+    "Fedu",
+    "school",
+    "sex",
+    "age",
+    "address",
+    "famsup",
+    "schoolsup",
+    "internet",
+    "goout",
+    "Dalc",
+    "Walc",
+    "health",
+)
+
+#: Categóricas → OneHotEncoder; el resto → StandardScaler (ambos solo sobre train).
+CATEGORICAL_FEATURES: tuple[str, ...] = (
+    "school",
+    "sex",
+    "address",
+    "higher",
+    "famsup",
+    "schoolsup",
+    "internet",
+)
+NUMERIC_FEATURES: tuple[str, ...] = tuple(
+    column for column in MODEL_FEATURES if column not in CATEGORICAL_FEATURES
+)
+
+#: Split 80/20 estratificado (reglas 2 y 3), siempre antes de transformar.
+TEST_SIZE = 0.2
+
+#: Clases de la etiqueta; DESAPROBADO es la clase positiva de las métricas.
+APROBADO = 0
+DESAPROBADO = 1
+
+#: Orden de impresión de la tabla comparativa de la Tarea B.
+MODEL_LABELS: tuple[tuple[str, str], ...] = (
+    ("baseline", "línea base"),
+    ("logistic_regression", "regresión logística"),
+    ("random_forest", "bosque aleatorio"),
+)
 
 
 def load_students(path: Path = DATA_PATH) -> pd.DataFrame:
@@ -213,5 +279,186 @@ def run_task_a() -> dict[str, object]:
     }
 
 
+# ------------------------------------------------------------------------------
+# Tarea B — Aprendizaje supervisado (clasificación)
+# ------------------------------------------------------------------------------
+
+
+def build_target(df: pd.DataFrame) -> pd.Series:
+    """Construye la etiqueta 'desaprobado = G3 < 10', usando solo G3."""
+    if "G3" not in df.columns:
+        raise ValueError("G3 es obligatoria para construir la etiqueta.")
+    return (df["G3"] < FAIL_THRESHOLD).astype(int).rename("desaprobado")
+
+
+def select_model_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extrae las variables permitidas para la Tarea B, sin G2 ni G3 (cero fuga)."""
+    missing = [column for column in MODEL_FEATURES if column not in df.columns]
+    if missing:
+        raise ValueError(f"Faltan columnas requeridas: {missing}")
+    return df.loc[:, list(MODEL_FEATURES)].copy()
+
+
+def split_train_test(
+    df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """Split 80/20 estratificado con semilla 42, ANTES de cualquier transform.
+
+    Ningún escalador ni codificador se ajusta aquí: viven dentro del Pipeline
+    y solo ven los datos de train (reglas 2 y 3 de la sección 4).
+    """
+    features = select_model_features(df)
+    target = build_target(df)
+    return train_test_split(
+        features,
+        target,
+        test_size=TEST_SIZE,
+        stratify=target,
+        random_state=SEED,
+    )
+
+
+def build_preprocessor() -> ColumnTransformer:
+    """Preprocesador: StandardScaler para numéricas y OneHotEncoder para categóricas."""
+    numeric_pipe = Pipeline([("scaler", StandardScaler())])
+    categorical_pipe = Pipeline(
+        [("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False))]
+    )
+    return ColumnTransformer(
+        transformers=[
+            ("num", numeric_pipe, list(NUMERIC_FEATURES)),
+            ("cat", categorical_pipe, list(CATEGORICAL_FEATURES)),
+        ],
+        remainder="drop",
+    )
+
+
+def build_logistic_regression() -> Pipeline:
+    """Regresión logística con one-hot para categóricas (Tarea B.4)."""
+    return Pipeline(
+        steps=[
+            ("pre", build_preprocessor()),
+            ("clf", LogisticRegression(max_iter=1000, random_state=SEED)),
+        ]
+    )
+
+
+def build_random_forest() -> Pipeline:
+    """Bosque aleatorio con 200 árboles y pesos balanceados (Tarea B.5)."""
+    return Pipeline(
+        steps=[
+            ("pre", build_preprocessor()),
+            (
+                "clf",
+                RandomForestClassifier(
+                    n_estimators=200,
+                    class_weight="balanced",
+                    random_state=SEED,
+                ),
+            ),
+        ]
+    )
+
+
+def baseline_predictions(y_train: pd.Series, n: int) -> np.ndarray:
+    """Línea base: predice siempre la clase mayoritaria de train (Tarea B.3)."""
+    majority = int(y_train.value_counts().idxmax())
+    return np.full(n, majority, dtype=int)
+
+
+def evaluate_predictions(
+    y_true: pd.Series | np.ndarray,
+    y_pred: np.ndarray,
+) -> dict[str, object]:
+    """Accuracy, precisión, recall, F1 y matriz de confusión con foco en 'desaprobado'."""
+    true_array = np.asarray(y_true)
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        true_array,
+        y_pred,
+        average="binary",
+        pos_label=DESAPROBADO,
+        zero_division=0,
+    )
+    matrix = confusion_matrix(true_array, y_pred, labels=[APROBADO, DESAPROBADO])
+    return {
+        "accuracy": float(accuracy_score(true_array, y_pred)),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1": float(f1),
+        "confusion_matrix": matrix.tolist(),
+    }
+
+
+def run_task_b() -> dict[str, object]:
+    """Ejecuta la Tarea B completa e imprime la tabla comparativa en pantalla."""
+    print("=== Tarea B — Clasificación supervisada (Issue #5) ===")
+    print("Momento de predicción: inicio del curso (G1 + contexto); G2 y G3 excluidas.")
+    print(f"Variables ({len(MODEL_FEATURES)}): {', '.join(MODEL_FEATURES)}")
+
+    df = load_students()
+    x_train, x_test, y_train, y_test = split_train_test(df)
+    print(
+        f"\nSplit 80/20 estratificado ANTES de transformar (random_state={SEED}): "
+        f"train={len(x_train)}, test={len(x_test)}"
+    )
+    print(
+        f"Desaprobados: train {int(y_train.sum())} ({y_train.mean():.1%}), "
+        f"test {int(y_test.sum())} ({y_test.mean():.1%})"
+    )
+
+    metrics: dict[str, dict[str, object]] = {
+        "baseline": evaluate_predictions(y_test, baseline_predictions(y_train, len(x_test))),
+    }
+
+    logistic = build_logistic_regression()
+    logistic.fit(x_train, y_train)
+    metrics["logistic_regression"] = evaluate_predictions(y_test, logistic.predict(x_test))
+
+    forest = build_random_forest()
+    forest.fit(x_train, y_train)
+    metrics["random_forest"] = evaluate_predictions(y_test, forest.predict(x_test))
+
+    print(f"\n{'Modelo':<22} | {'Accuracy':>8} | {'Precisión':>9} | {'Recall':>6} | {'F1':>6}")
+    for key, label in MODEL_LABELS:
+        model_metrics = metrics[key]
+        print(
+            f"{label:<22} | {float(model_metrics['accuracy']):>8.3f} |"
+            f" {float(model_metrics['precision']):>9.3f} |"
+            f" {float(model_metrics['recall']):>6.3f} | {float(model_metrics['f1']):>6.3f}"
+        )
+
+    print("\nMatriz de confusión por modelo (0 = aprobado, 1 = desaprobado):")
+    for key, label in MODEL_LABELS:
+        (tn, fp), (fn, tp) = metrics[key]["confusion_matrix"]
+        print(f"  {label:<22}: TN={tn} FP={fp} FN={fn} TP={tp}")
+
+    real_models = ("logistic_regression", "random_forest")
+    best = max(
+        real_models,
+        key=lambda name: (float(metrics[name]["f1"]), float(metrics[name]["recall"])),
+    )
+    beats_baseline = float(metrics[best]["recall"]) > float(metrics["baseline"]["recall"])
+    print(f"\nMejor modelo (mayor F1 de desaprobado): {best}")
+    print(
+        f"Checklist: ¿supera a la línea base en recall de desaprobados? "
+        f"{'Sí' if beats_baseline else 'NO ⚠️'} "
+        f"({float(metrics[best]['recall']):.3f} vs "
+        f"{float(metrics['baseline']['recall']):.3f})"
+    )
+
+    return {
+        "n_train": len(x_train),
+        "n_test": len(x_test),
+        "train_rate": float(y_train.mean()),
+        "test_rate": float(y_test.mean()),
+        "metrics": metrics,
+        "best_model": best,
+        "beats_baseline_recall": beats_baseline,
+        "models": {"logistic_regression": logistic, "random_forest": forest},
+        "split": {"x_train": x_train, "x_test": x_test, "y_train": y_train, "y_test": y_test},
+    }
+
+
 if __name__ == "__main__":
     run_task_a()
+    run_task_b()
