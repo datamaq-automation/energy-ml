@@ -1,4 +1,4 @@
-"""educacion/fail_risk.py — Tareas A (agrupamiento) y B (clasificación) — Issue #5.
+"""educacion/fail_risk.py — Tareas A, B y C del Issue #5: agrupamiento, predicción y equidad.
 
 Caso de estudio: "Riesgo de desaprobar una materia: agrupamiento, predicción y equidad".
 
@@ -104,6 +104,29 @@ MODEL_LABELS: tuple[tuple[str, str], ...] = (
     ("baseline", "línea base"),
     ("logistic_regression", "regresión logística"),
     ("random_forest", "bosque aleatorio"),
+)
+
+#: Subgrupos de equidad exigidos por la Tarea C (sección 3 del issue).
+SUBGROUP_COLUMNS: tuple[str, ...] = ("sex", "school")
+
+#: Brecha máxima tolerada entre subgrupos antes de declarar una diferencia relevante.
+FAIRNESS_GAP_THRESHOLD = 0.10
+
+#: Subgrupo con menos casos que esto: la métrica es ruidosa y hay que leerla con cuidado.
+MIN_SUBGROUP_N = 30
+
+#: Recomendación de uso (Tarea C.3): qué hacer y qué NO hacer con cada predicción.
+RECOMMENDATION: tuple[str, ...] = (
+    "SÍ: usar la predicción para priorizar apoyo — tutorías, refuerzo y seguimiento "
+    "temprano antes del examen.",
+    "SÍ: revisar cada predicción con docentes o tutores: el modelo ordena la fila de "
+    "atención, no decide.",
+    "SÍ: mirar las métricas por subgrupo antes de confiar en el modelo para un perfil particular.",
+    "NO: usar el resultado para decisiones administrativas (sanciones, exclusiones o "
+    "mesas de examen) sin revisión humana.",
+    "NO: presentar el resultado al estudiante como un destino cerrado: es una señal de "
+    "riesgo, no una sentencia.",
+    "NO: almacenar ni compartir predicciones con datos identificables de estudiantes.",
 )
 
 
@@ -360,6 +383,32 @@ def build_random_forest() -> Pipeline:
     )
 
 
+def fit_real_models(
+    x_train: pd.DataFrame,
+    y_train: pd.Series,
+) -> dict[str, Pipeline]:
+    """Ajusta los dos modelos reales de la Tarea B (sin la línea base)."""
+    builders = (
+        ("logistic_regression", build_logistic_regression),
+        ("random_forest", build_random_forest),
+    )
+    models: dict[str, Pipeline] = {}
+    for name, builder in builders:
+        pipeline = builder()
+        pipeline.fit(x_train, y_train)
+        models[name] = pipeline
+    return models
+
+
+def pick_best_model(metrics: dict[str, dict[str, object]]) -> str:
+    """Mejor modelo real por F1 de desaprobado (empate → mayor recall)."""
+    real_models = ("logistic_regression", "random_forest")
+    return max(
+        real_models,
+        key=lambda name: (float(metrics[name]["f1"]), float(metrics[name]["recall"])),
+    )
+
+
 def baseline_predictions(y_train: pd.Series, n: int) -> np.ndarray:
     """Línea base: predice siempre la clase mayoritaria de train (Tarea B.3)."""
     majority = int(y_train.value_counts().idxmax())
@@ -410,13 +459,9 @@ def run_task_b() -> dict[str, object]:
         "baseline": evaluate_predictions(y_test, baseline_predictions(y_train, len(x_test))),
     }
 
-    logistic = build_logistic_regression()
-    logistic.fit(x_train, y_train)
-    metrics["logistic_regression"] = evaluate_predictions(y_test, logistic.predict(x_test))
-
-    forest = build_random_forest()
-    forest.fit(x_train, y_train)
-    metrics["random_forest"] = evaluate_predictions(y_test, forest.predict(x_test))
+    models = fit_real_models(x_train, y_train)
+    for name, model in models.items():
+        metrics[name] = evaluate_predictions(y_test, model.predict(x_test))
 
     print(f"\n{'Modelo':<22} | {'Accuracy':>8} | {'Precisión':>9} | {'Recall':>6} | {'F1':>6}")
     for key, label in MODEL_LABELS:
@@ -432,16 +477,12 @@ def run_task_b() -> dict[str, object]:
         (tn, fp), (fn, tp) = metrics[key]["confusion_matrix"]
         print(f"  {label:<22}: TN={tn} FP={fp} FN={fn} TP={tp}")
 
-    real_models = ("logistic_regression", "random_forest")
-    best = max(
-        real_models,
-        key=lambda name: (float(metrics[name]["f1"]), float(metrics[name]["recall"])),
-    )
+    best = pick_best_model(metrics)
     beats_baseline = float(metrics[best]["recall"]) > float(metrics["baseline"]["recall"])
     print(f"\nMejor modelo (mayor F1 de desaprobado): {best}")
     print(
         f"Checklist: ¿supera a la línea base en recall de desaprobados? "
-        f"{'Sí' if beats_baseline else 'NO ⚠️'} "
+        f"{'Sí' if beats_baseline else 'NO'} "
         f"({float(metrics[best]['recall']):.3f} vs "
         f"{float(metrics['baseline']['recall']):.3f})"
     )
@@ -454,11 +495,143 @@ def run_task_b() -> dict[str, object]:
         "metrics": metrics,
         "best_model": best,
         "beats_baseline_recall": beats_baseline,
-        "models": {"logistic_regression": logistic, "random_forest": forest},
+        "models": models,
         "split": {"x_train": x_train, "x_test": x_test, "y_train": y_train, "y_test": y_test},
+    }
+
+
+# ------------------------------------------------------------------------------
+# Tarea C — Equidad y análisis de errores
+# ------------------------------------------------------------------------------
+
+
+def subgroup_metrics(
+    y_true: pd.Series | np.ndarray,
+    y_pred: np.ndarray,
+    groups: pd.Series,
+) -> pd.DataFrame:
+    """Recall y precisión de 'desaprobado' para cada subgrupo (solo agregados)."""
+    frame = pd.DataFrame(
+        {
+            "y_true": np.asarray(y_true),
+            "y_pred": np.asarray(y_pred),
+            "group": groups.to_numpy(),
+        }
+    )
+    rows: list[dict[str, object]] = []
+    for value, subset in frame.groupby("group", sort=True):
+        precision, recall, _, _ = precision_recall_fscore_support(
+            subset["y_true"],
+            subset["y_pred"],
+            average="binary",
+            pos_label=DESAPROBADO,
+            zero_division=0,
+        )
+        rows.append(
+            {
+                "group": value,
+                "n": int(len(subset)),
+                "n_desaprobados": int((subset["y_true"] == DESAPROBADO).sum()),
+                "precision": float(precision),
+                "recall": float(recall),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def analyze_fairness(
+    tables: dict[str, pd.DataFrame],
+    gap_threshold: float = FAIRNESS_GAP_THRESHOLD,
+) -> dict[str, dict[str, object]]:
+    """Detecta brechas relevantes por subgrupo y enumera causas posibles (Tarea C.2).
+
+    Causas consideradas: subgrupos chicos (métrica ruidosa), desbalance de la
+    etiqueta entre subgrupos, y el uso de la propia variable como predictora
+    (puede actuar como proxy de otras características).
+    """
+    analysis: dict[str, dict[str, object]] = {}
+    for column, table in tables.items():
+        recall_gap = float(table["recall"].max() - table["recall"].min())
+        precision_gap = float(table["precision"].max() - table["precision"].min())
+        small_groups = [str(value) for value in table.loc[table["n"] < MIN_SUBGROUP_N, "group"]]
+        positive_rates = table["n_desaprobados"] / table["n"]
+        rate_gap = float(positive_rates.max() - positive_rates.min())
+        relevant = recall_gap >= gap_threshold or precision_gap >= gap_threshold
+
+        causes: list[str] = []
+        if small_groups:
+            causes.append(
+                f"subgrupo con pocos casos ({', '.join(small_groups)}): la métrica es ruidosa"
+            )
+        if rate_gap >= gap_threshold:
+            causes.append(
+                "la proporción de desaprobados difiere entre subgrupos "
+                f"({positive_rates.min():.0%} vs {positive_rates.max():.0%}): "
+                "la etiqueta está desbalanceada por subgrupo"
+            )
+        if relevant:
+            causes.append(
+                f"'{column}' también es variable del modelo: puede actuar como proxy "
+                "de otras características"
+            )
+
+        analysis[column] = {
+            "recall_gap": recall_gap,
+            "precision_gap": precision_gap,
+            "relevant": relevant,
+            "small_groups": small_groups,
+            "causes": causes,
+        }
+    return analysis
+
+
+def run_task_c() -> dict[str, object]:
+    """Ejecuta la Tarea C: equidad por subgrupo, causas y recomendación de uso."""
+    print("=== Tarea C — Equidad y análisis de errores (Issue #5) ===")
+
+    df = load_students()
+    x_train, x_test, y_train, y_test = split_train_test(df)
+    models = fit_real_models(x_train, y_train)
+    metrics = {
+        name: evaluate_predictions(y_test, model.predict(x_test)) for name, model in models.items()
+    }
+    best = pick_best_model(metrics)
+    print(f"Modelo evaluado: {best} (mejor F1 de desaprobado en la Tarea B)")
+    print(f"Subgrupos exigidos por el issue: {', '.join(SUBGROUP_COLUMNS)}")
+
+    predictions = models[best].predict(x_test)
+    fairness = {
+        column: subgroup_metrics(y_test, predictions, x_test[column]) for column in SUBGROUP_COLUMNS
+    }
+    for column, table in fairness.items():
+        print(f"\nRecall y precisión por '{column}' (clase positiva = desaprobado):")
+        print(table.to_string(index=False))
+
+    analysis = analyze_fairness(fairness)
+    print(f"\nBrechas (diferencia relevante desde {FAIRNESS_GAP_THRESHOLD:.0%}):")
+    for column, info in analysis.items():
+        state = "RELEVANTE" if info["relevant"] else "sin diferencia relevante"
+        print(
+            f"  {column}: recall {float(info['recall_gap']):.3f}, "
+            f"precisión {float(info['precision_gap']):.3f} -> {state}"
+        )
+        if info["relevant"]:
+            for cause in info["causes"]:
+                print(f"    causa posible: {cause}")
+
+    print("\nRecomendación de uso (Tarea C.3) — el modelo sirve para acompañar, no para sancionar:")
+    for line in RECOMMENDATION:
+        print(f"  {line}")
+
+    return {
+        "best_model": best,
+        "fairness": fairness,
+        "analysis": analysis,
+        "recommendation": RECOMMENDATION,
     }
 
 
 if __name__ == "__main__":
     run_task_a()
     run_task_b()
+    run_task_c()
