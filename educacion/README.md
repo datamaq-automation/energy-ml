@@ -65,3 +65,34 @@ Esto sigue la sección 2 del issue: *"si el alumno predice al inicio del curso, 
 7. Semilla fija `random_state=42` donde corresponda.
 8. Sin rutas absolutas ni credenciales en el código.
 9. Type hints + `ruff check --fix` + `ruff format` antes de cerrar cada tarea.
+
+---
+
+## 6. Estado de entregables (sección 5 del issue)
+
+- [x] Declaración escrita del momento de predicción y de las variables permitidas → **este documento**.
+- [x] Módulo con las tareas A, B y C, en orden → `fail_risk.py`.
+- [x] Tabla de métricas de la línea base, la regresión logística y el bosque aleatorio → imprime `run_task_b()`.
+- [x] Gráficos de codo y silueta de la Tarea A → imprime `run_task_a()` (solo pantalla, sin PNG).
+- [x] Tabla de recall y precisión por subgrupo (`sex`, `school`) → imprime `run_task_c()`.
+- [x] Conclusión de una página en español → `CONCLUSION` al final del módulo (`run_conclusion()`).
+
+---
+
+## 7. Cómo ejecutar
+
+```bash
+python educacion/fail_risk.py      # imprime Tareas A, B, C y la conclusión en pantalla
+pytest tests/educacion -q          # tests del caso de estudio
+ruff check educacion tests/educacion
+```
+
+Los gráficos de codo y silueta se muestran **solo en pantalla** (no se guardan archivos).
+
+---
+
+## 8. Contenido
+
+- `fail_risk.py` — módulo con las Tareas A (K-means), B (clasificación) y C (equidad) en orden, y la conclusión al final.
+- `tests/educacion/` — 79 tests de todo el módulo.
+- `../datos/educacion/student-mat.csv` — dataset UCI 320 (CC BY 4.0, ver sección 4).

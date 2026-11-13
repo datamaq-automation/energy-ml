@@ -631,7 +631,57 @@ def run_task_c() -> dict[str, object]:
     }
 
 
+# ------------------------------------------------------------------------------
+# Conclusión — entregable final (sección 5 del issue), al final del módulo
+# ------------------------------------------------------------------------------
+
+#: Conclusión de una página: qué se puede predecir, con qué límites y cómo usar
+#: el resultado sin perjudicar al estudiante. Los números citados corresponden a
+#: la corrida real con el dataset UCI 320 y semilla 42 (el test de integración
+#: los contrasta contra los modelos vivos).
+CONCLUSION: tuple[str, ...] = (
+    "1. Qué se puede predecir. Con la información disponible al inicio del curso "
+    "(G1, hábitos de estudio, antecedentes y contexto sociodemográfico) es posible "
+    "identificar estudiantes con riesgo de desaprobar y agruparlos en perfiles claros. "
+    "El agrupamiento (Tarea A) separó dos perfiles — buen desempeño con buena asistencia, "
+    "23,6 % desaprobados, frente a desempeño bajo con ausencias frecuentes, 71,4 % — y los "
+    "modelos supervisados (Tarea B) superan con holgura a la línea base: la regresión "
+    "logística alcanzó F1 0,79 y recall 0,73, y el bosque aleatorio subió el recall a 0,81, "
+    "es decir, detecta a 4 de cada 5 estudiantes en riesgo que la línea base ignora por "
+    "completo (recall 0,00). Predecir bien a la mayoría no alcanza: lo que importa es no "
+    "perder a quien está en riesgo.",
+    "2. Con qué límites. El accuracy de la línea base (0,67) mostraba justo el peligro de "
+    "conformarse con la mayoría. La regresión logística todavía se pierde 7 de los 26 "
+    "desaprobados del test y el bosque aleatorio comete 9 falsos positivos: ningún modelo "
+    "está libre de error y cada error tiene consecuencias humanas. La equidad (Tarea C) "
+    "mostró brechas relevantes: el recall para mujeres (0,65) es 24 puntos menor que para "
+    "varones (0,89), y el resultado aparentemente perfecto de la escuela MS se apoya en solo "
+    "10 estudiantes y 3 desaprobados, por lo que es una métrica ruidosa. Además, sex y school "
+    "son entradas del modelo y pueden actuar como proxies de otras características. Por último, "
+    "el dataset cubre una sola materia, en dos escuelas y 395 estudiantes: los resultados no "
+    "se generalizan a otra institución sin volver a validarlos.",
+    "3. Cómo usar el resultado sin perjudicar al estudiante. El modelo sirve para priorizar "
+    "apoyo —tutorías, refuerzo y seguimiento temprano— con revisión humana de cada caso por "
+    "docentes o tutores, y mirando siempre las métricas por subgrupo antes de confiar en él "
+    "para un perfil particular. NO debe usarse para decisiones administrativas (sanciones, "
+    "exclusiones o mesas de examen) sin revisión humana; NO debe presentarse al estudiante "
+    "como un destino cerrado: es una señal de riesgo, no una sentencia; y NO deben almacenarse "
+    "ni compartirse predicciones con datos identificables. En resumen: el modelo acompaña la "
+    "decisión humana, nunca la reemplaza.",
+)
+
+
+def run_conclusion() -> tuple[str, ...]:
+    """Imprime la conclusión de una página al final del módulo (entregable final)."""
+    print("\n=== Conclusión — Issue #5 ===")
+    for paragraph in CONCLUSION:
+        print(paragraph)
+        print()
+    return CONCLUSION
+
+
 if __name__ == "__main__":
     run_task_a()
     run_task_b()
     run_task_c()
+    run_conclusion()
