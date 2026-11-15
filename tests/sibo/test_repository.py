@@ -1,4 +1,4 @@
-"""Pruebas de los adaptadores SQLite y la semilla nutricional."""
+"""tests/sibo/test_repository.py — Pruebas de los adaptadores SQLite y la semilla nutricional."""
 
 from __future__ import annotations
 

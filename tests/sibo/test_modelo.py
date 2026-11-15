@@ -1,4 +1,4 @@
-"""Pruebas del modelo híbrido de estimación de gases."""
+"""tests/sibo/test_modelo.py — Pruebas del modelo híbrido de estimación de gases."""
 
 from __future__ import annotations
 

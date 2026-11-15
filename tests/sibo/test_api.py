@@ -1,4 +1,4 @@
-"""Pruebas end-to-end de la API SIBO con una base SQLite temporal."""
+"""tests/sibo/test_api.py — Pruebas end-to-end de la API SIBO con una base SQLite temporal."""
 
 from __future__ import annotations
 

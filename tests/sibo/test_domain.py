@@ -1,4 +1,4 @@
-"""Pruebas de las reglas puras del dominio SIBO."""
+"""tests/sibo/test_domain.py — Pruebas de las reglas puras del dominio SIBO."""
 
 from __future__ import annotations
 
