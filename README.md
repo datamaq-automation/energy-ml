@@ -32,6 +32,10 @@ Este proyecto es un **caso de estudio real** del curso **[Procesamiento de Apren
 4. **Prueba los endpoints:** `curl -X POST http://localhost:8000/api/v1/identify-loads -F "file=@data/input/planta_2_a.csv"`
 5. **Audita con agentes:** Lee el árbol de decisión exportado en JSON
 
+### Proyecto complementario: pronóstico de residuos
+
+El directorio [`datos/residuos/`](datos/residuos/README.md) contiene un caso separado de pronóstico de residuos sólidos mensuales de Ann Arbor: datos abiertos, preparación de la serie, comparación de modelos y resultados de validación. No forma parte del flujo principal de identificación NILM.
+
 ---
 
 ## Arquitectura

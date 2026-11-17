@@ -14,6 +14,34 @@ PIP_BIN="${VENV_DIR}/bin/pip"
 UVICORN_BIN="${VENV_DIR}/bin/uvicorn"
 PYTEST_BIN="${VENV_DIR}/bin/pytest"
 RUFF_BIN="${VENV_DIR}/bin/ruff"
+PORT="${PORT:-8000}"
+
+port_in_use() {
+    python3 - "$1" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try:
+    s.bind(("0.0.0.0", port))
+    sys.exit(0)
+except OSError:
+    sys.exit(1)
+finally:
+    s.close()
+PY
+}
+
+resolve_port() {
+    local port="${PORT:-8000}"
+    while ! port_in_use "$port"; do
+        echo "⚠️ Puerto $port está ocupado; probando $(($port + 1))..." >&2
+        port=$((port + 1))
+    done
+    printf '%s' "$port"
+}
 
 ensure_venv() {
     if [[ ! -d "$VENV_DIR" ]]; then
@@ -62,21 +90,23 @@ COMMAND="${1:-help}"
 case "$COMMAND" in
     dev)
         ensure_venv
-        echo "🚀 Iniciando servidor FastAPI en modo desarrollo (reload)..."
-        exec "$UVICORN_BIN" src.main:app --reload --host 0.0.0.0 --port 8000
+        PORT="$(resolve_port)"
+        echo "🚀 Iniciando servidor FastAPI en modo desarrollo (reload) en puerto $PORT..."
+        exec "$UVICORN_BIN" src.main:app --reload --host 0.0.0.0 --port "$PORT"
         ;;
     start)
         ensure_venv
+        PORT="$(resolve_port)"
         if resolver_modo "${2:-dev}"; then
             :  # resolver_modo ya exportó MEDICIONES_SOURCE
         fi
         if [[ "${MEDICIONES_SOURCE:-local}" == "ssh" ]]; then
-            echo "🚀 Iniciando servidor FastAPI en modo producción (datos desde VPS)..."
+            echo "🚀 Iniciando servidor FastAPI en modo producción (datos desde VPS) en puerto $PORT..."
         else
-            echo "🚀 Iniciando servidor FastAPI en modo desarrollo (datos locales)..."
+            echo "🚀 Iniciando servidor FastAPI en modo desarrollo (datos locales) en puerto $PORT..."
         fi
         validar_ssh_prod  # Exit si SSH falla
-        exec "$UVICORN_BIN" src.main:app --host 0.0.0.0 --port 8000
+        exec "$UVICORN_BIN" src.main:app --host 0.0.0.0 --port "$PORT"
         ;;
     train)
         ensure_venv

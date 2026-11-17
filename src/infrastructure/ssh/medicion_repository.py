@@ -247,7 +247,7 @@ class SshMedicionRepository:
         logger.info("%d mediciones dentro del rango [%s, %s)", len(mediciones), desde, hasta)
         return mediciones
 
-    def ultima_descarga_info(self) -> dict:
+    def ultima_descarga_info(self) -> dict[str, object | None]:
         """Retorna metadatos de la última descarga (para métricas)."""
         return {
             "instante": self._ultima_descarga.isoformat() if self._ultima_descarga else None,
