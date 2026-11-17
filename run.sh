@@ -108,6 +108,13 @@ case "$COMMAND" in
         validar_ssh_prod  # Exit si SSH falla
         exec "$UVICORN_BIN" src.main:app --host 0.0.0.0 --port "$PORT"
         ;;
+    sibo)
+        ensure_venv
+        PORT="${SIBO_PORT:-8001}"
+        PORT="$(resolve_port)"
+        echo "🫁 Iniciando SIBO Balance en http://localhost:$PORT..."
+        exec "$UVICORN_BIN" src.infrastructure.sibo.fastapi.app:create_app --factory --reload --host 0.0.0.0 --port "$PORT"
+        ;;
     train)
         ensure_venv
         ARGS=("${@:2}")
@@ -187,6 +194,7 @@ case "$COMMAND" in
         echo "              Opcional: dev (datos locales) o prod (datos desde VPS via SSH)"
         echo "              Uso: ./run.sh start dev    # datos en data/input/"
         echo "                   ./run.sh start prod   # datos descargados del VPS"
+        echo "  sibo      : Levanta la app SIBO Balance (puerto 8001 por defecto)"
         echo "  train     : Identifica las cargas de data/input/ y guarda resultados en data/output/"
         echo "              Opcional: medidores y --desde/--hasta (ej. ./run.sh train planta_2_a --desde 2026-09-15)"
         echo "  simulate  : Genera data/input/sintetico.csv y su verdad en data/verdad/ (cargas conocidas)"

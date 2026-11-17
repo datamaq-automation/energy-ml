@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sibo.infrastructure.fastapi.app import create_app
+
+from src.infrastructure.sibo.fastapi.app import create_app
 
 
 @pytest.fixture
@@ -74,6 +75,10 @@ def test_serie_de_gases_por_dia_semana_y_mes(cliente: TestClient) -> None:
     assert cuerpo["pico"] > 5
     assert len(cuerpo["puntos"]) == 25
     assert all(0 <= punto["nivel_estimado"] <= 100 for punto in cuerpo["puntos"])
+    assert all(
+        punto["nivel_bajo"] <= punto["nivel_estimado"] <= punto["nivel_alto"]
+        for punto in cuerpo["puntos"]
+    )
 
     semana = cliente.get("/api/sibo/gases", params={"rango": "semana", "fecha": "2026-11-07"})
     assert semana.status_code == 200

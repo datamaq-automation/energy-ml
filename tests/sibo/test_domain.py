@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from sibo.domain.entities import Alimento
-from sibo.domain.servicios import (
+from src.domain.sibo.entities import Alimento
+from src.domain.sibo.servicios import (
     curva_absorcion,
     factor_fodmap,
     factor_porcion,
