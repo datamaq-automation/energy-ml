@@ -198,6 +198,28 @@ def test_scaler_fits_only_on_train(
     assert not np.allclose(scaler.mean_, full_mean)
 
 
+def test_onehot_encoder_fits_only_on_train(
+    split: tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series],
+) -> None:
+    """Si el codificador se ajustara con train+test, una categoría inyectada en test aparecería."""
+    x_train, x_test, y_train, _ = split
+    test_con_categoria_nueva = x_test.copy()
+    test_con_categoria_nueva["address"] = "Z"
+
+    pipeline = build_logistic_regression()
+    pipeline.fit(x_train, y_train)
+
+    onehot = pipeline.named_steps["pre"].named_transformers_["cat"].named_steps["onehot"]
+    address_idx = CATEGORICAL_FEATURES.index("address")
+    assert list(onehot.categories_[address_idx]) == sorted(x_train["address"].unique())
+    assert "Z" not in onehot.categories_[address_idx]
+
+    nombres = pipeline.named_steps["pre"].get_feature_names_out()
+    assert not any("address_Z" in name for name in nombres)
+    predictions = pipeline.predict(test_con_categoria_nueva)
+    assert set(np.unique(predictions)) <= {APROBADO, DESAPROBADO}
+
+
 def test_encoder_ignores_unseen_category(students: pd.DataFrame) -> None:
     urban_only = students[students["address"] == "U"]
     x_urban = select_model_features(urban_only)
