@@ -5,6 +5,8 @@ from typing import Protocol
 
 from src.domain.bicis.modelos import SerieDiariaViajes
 
+__all__ = ["RepositorioSerieDiaria"]
+
 
 class RepositorioSerieDiaria(Protocol):
     """Fuente de totales diarios para un intervalo de fechas."""

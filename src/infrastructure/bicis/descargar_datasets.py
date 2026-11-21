@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import shutil
 import zipfile
-from http.client import HTTPException
+from http.client import HTTPException, HTTPResponse
 from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import urlparse
@@ -61,17 +61,22 @@ def _descargar_zip(url: str, destino: Path) -> None:
 
 def _descargar_tramo(solicitud: Request, parcial: Path, posicion: int) -> None:
     with urlopen(solicitud, timeout=120) as respuesta:
-        if not _es_url_oficial(respuesta.geturl()):
-            raise ValueError(f"Redirección fuera del host oficial rechazada: {respuesta.geturl()}")
-        reanudar = posicion > 0 and respuesta.status == 206
-        if reanudar and not (respuesta.headers.get("Content-Range") or "").startswith(
-            f"bytes {posicion}-"
-        ):
-            raise ValueError("El servidor respondió un rango distinto al solicitado.")
-        if respuesta.status == 206 and not reanudar:
-            raise ValueError("El servidor devolvió una descarga parcial inesperada.")
+        reanudar = _validar_respuesta_descarga(respuesta, posicion)
         with parcial.open("ab" if reanudar else "wb") as salida:
             shutil.copyfileobj(respuesta, salida, length=1024 * 1024)
+
+
+def _validar_respuesta_descarga(respuesta: HTTPResponse, posicion: int) -> bool:
+    if not _es_url_oficial(respuesta.geturl()):
+        raise ValueError(f"Redirección fuera del host oficial rechazada: {respuesta.geturl()}")
+    reanudar = posicion > 0 and respuesta.status == 206
+    if reanudar and not (respuesta.headers.get("Content-Range") or "").startswith(
+        f"bytes {posicion}-"
+    ):
+        raise ValueError("El servidor respondió un rango distinto al solicitado.")
+    if respuesta.status == 206 and not reanudar:
+        raise ValueError("El servidor devolvió una descarga parcial inesperada.")
+    return reanudar
 
 
 def _es_url_oficial(url: str) -> bool:

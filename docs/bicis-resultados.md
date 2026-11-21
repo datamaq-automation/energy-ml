@@ -24,6 +24,7 @@ python -m src.infrastructure.cli.pronosticar_bicis
 ```
 
 En macOS o Linux, la activación del entorno virtual es `source .venv/bin/activate`; los otros comandos son iguales.
+Para usar otro directorio con los ZIP, agregá `--directorio-datos ruta/al/directorio` al último comando.
 
 En la primera ejecución, el comando descarga los ZIP oficiales de 2024 y 2025 a `datos/bicis/` y luego ejecuta la preparación y evaluación. Si ya hay ZIP válidos en esa carpeta, los reutiliza. `datos/` está ignorada por Git: los ZIP no se versionan. El comando informa la cobertura y las métricas en la salida; no guarda resultados generados.
 

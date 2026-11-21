@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 from datetime import date
 from pathlib import Path
 
@@ -16,6 +17,19 @@ from src.infrastructure.settings.logger import logger
 
 DESDE: date = date(2024, 1, 1)
 HASTA: date = date(2025, 12, 31)
+
+
+def leer_argumentos() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Evalúa pronósticos diarios de bicicletas públicas."
+    )
+    parser.add_argument(
+        "--directorio-datos",
+        type=Path,
+        default=DIRECTORIO_DATOS,
+        help="Directorio con los ZIP oficiales (por defecto: datos/bicis).",
+    )
+    return parser.parse_args()
 
 
 def ejecutar(directorio_datos: Path = DIRECTORIO_DATOS) -> ResultadoEvaluacionPronosticos:
@@ -72,7 +86,8 @@ def _informar_metricas(resultado: ResultadoEvaluacionPronosticos) -> None:
 
 
 def main() -> None:
-    ejecutar()
+    args = leer_argumentos()
+    ejecutar(args.directorio_datos)
 
 
 if __name__ == "__main__":

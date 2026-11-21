@@ -116,53 +116,95 @@ class RepositorioRecorridosBicis:
     ) -> tuple[int, int, int, int, int, int]:
         totales = [0, 0, 0, 0, 0, 0]
         with zipfile.ZipFile(ruta) as archivo_zip:
-            csvs = [nombre for nombre in archivo_zip.namelist() if nombre.lower().endswith(".csv")]
-            if len(csvs) != 1:
-                raise ValueError(
-                    f"{ruta} debe contener exactamente un CSV (encontrados: {len(csvs)})."
-                )
-            with archivo_zip.open(csvs[0]) as binario:
+            nombre_csv = _nombre_csv(archivo_zip, ruta)
+            with archivo_zip.open(nombre_csv) as binario:
                 texto = io.TextIOWrapper(
                     binario, encoding="utf-8-sig", errors="replace", newline=""
                 )
                 lector = csv.DictReader(texto)
-                columnas = {
-                    nombre.replace("\ufeff", "").strip().casefold(): nombre
-                    for nombre in lector.fieldnames or []
-                }
-                id_columna = columnas.get("id_recorrido")
-                fecha_columna = columnas.get("fecha_origen_recorrido")
-                if id_columna is None or fecha_columna is None:
-                    raise ValueError(f"{ruta} no contiene id_recorrido y fecha_origen_recorrido.")
+                id_columna, fecha_columna = _columnas_requeridas(lector.fieldnames, ruta)
                 for fila in lector:
-                    totales[0] += 1
-                    if None in fila:
-                        totales[5] += 1
-                        continue
-                    try:
-                        fecha = datetime.fromisoformat(
-                            (fila.get(fecha_columna) or "").strip()
-                        ).date()
-                    except ValueError:
-                        totales[4] += 1
-                        continue
-                    identificador = (fila.get(id_columna) or "").strip()
-                    if not identificador:
-                        totales[3] += 1
-                    else:
-                        insertado = conexion.execute(
-                            "INSERT OR IGNORE INTO ids (anio, id, fecha) VALUES (?, ?, ?)",
-                            (anio, identificador, fecha.isoformat()),
-                        )
-                        if insertado.rowcount == 0:
-                            totales[1] += 1
-                            fecha_original = conexion.execute(
-                                "SELECT fecha FROM ids WHERE anio = ? AND id = ?",
-                                (anio, identificador),
-                            ).fetchone()[0]
-                            if fecha_original != fecha.isoformat():
-                                totales[2] += 1
-                            continue
-                    if desde <= fecha <= hasta:
-                        conteos[fecha] += 1
+                    _procesar_fila(
+                        fila,
+                        anio,
+                        desde,
+                        hasta,
+                        id_columna,
+                        fecha_columna,
+                        conteos,
+                        conexion,
+                        totales,
+                    )
         return tuple(totales)
+
+
+def _nombre_csv(archivo_zip: zipfile.ZipFile, ruta: Path) -> str:
+    csvs = [nombre for nombre in archivo_zip.namelist() if nombre.lower().endswith(".csv")]
+    if len(csvs) != 1:
+        raise ValueError(f"{ruta} debe contener exactamente un CSV (encontrados: {len(csvs)}).")
+    return csvs[0]
+
+
+def _columnas_requeridas(fieldnames: list[str] | None, ruta: Path) -> tuple[str, str]:
+    columnas = {
+        nombre.replace("\ufeff", "").strip().casefold(): nombre for nombre in fieldnames or []
+    }
+    id_columna = columnas.get("id_recorrido")
+    fecha_columna = columnas.get("fecha_origen_recorrido")
+    if id_columna is None or fecha_columna is None:
+        raise ValueError(f"{ruta} no contiene id_recorrido y fecha_origen_recorrido.")
+    return id_columna, fecha_columna
+
+
+def _procesar_fila(
+    fila: Mapping[str | None, str | None],
+    anio: int,
+    desde: date,
+    hasta: date,
+    id_columna: str,
+    fecha_columna: str,
+    conteos: Counter[date],
+    conexion: sqlite3.Connection,
+    totales: list[int],
+) -> None:
+    totales[0] += 1
+    if None in fila:
+        totales[5] += 1
+        return
+    try:
+        fecha = datetime.fromisoformat((fila.get(fecha_columna) or "").strip()).date()
+    except ValueError:
+        totales[4] += 1
+        return
+
+    identificador = (fila.get(id_columna) or "").strip()
+    if not identificador:
+        totales[3] += 1
+    elif not _registrar_identificador(conexion, anio, identificador, fecha, totales):
+        return
+    if desde <= fecha <= hasta:
+        conteos[fecha] += 1
+
+
+def _registrar_identificador(
+    conexion: sqlite3.Connection,
+    anio: int,
+    identificador: str,
+    fecha: date,
+    totales: list[int],
+) -> bool:
+    insertado = conexion.execute(
+        "INSERT OR IGNORE INTO ids (anio, id, fecha) VALUES (?, ?, ?)",
+        (anio, identificador, fecha.isoformat()),
+    )
+    if insertado.rowcount != 0:
+        return True
+
+    totales[1] += 1
+    fecha_original = conexion.execute(
+        "SELECT fecha FROM ids WHERE anio = ? AND id = ?",
+        (anio, identificador),
+    ).fetchone()[0]
+    if fecha_original != fecha.isoformat():
+        totales[2] += 1
+    return False
