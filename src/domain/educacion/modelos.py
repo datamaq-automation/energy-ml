@@ -16,8 +16,11 @@ K_MAX = 6
 #: Umbral de la etiqueta: desaprobado = G3 < 10 (sección 2 del issue).
 FAIL_THRESHOLD = 10
 
-#: Variables permitidas para la Tarea B (sección 2 del issue): las 18 coherentes
+#: Variables permitidas para la Tarea B (sección 2 del issue): las 16 coherentes
 #: con el momento de predicción declarado — sin G2 (desconocida) ni G3 (etiqueta).
+#: Decisión del PR: sex y school quedan FUERA del modelo — costaban ~4 puntos de
+#: recall y ampliaban la brecha por sexo del mejor modelo de 24 a 13 puntos —
+#: pero siguen auditándose como subgrupos de equidad en la Tarea C.
 MODEL_FEATURES: tuple[str, ...] = (
     "G1",
     "studytime",
@@ -26,8 +29,6 @@ MODEL_FEATURES: tuple[str, ...] = (
     "higher",
     "Medu",
     "Fedu",
-    "school",
-    "sex",
     "age",
     "address",
     "famsup",
@@ -39,10 +40,9 @@ MODEL_FEATURES: tuple[str, ...] = (
     "health",
 )
 
-#: Categóricas → OneHotEncoder; el resto → StandardScaler (ambos solo sobre train).
+#: Categóricas del modelo → OneHotEncoder; el resto → StandardScaler (ambos solo sobre train).
+#: sex y school también son categóricas del dataset, pero hoy no entran al modelo.
 CATEGORICAL_FEATURES: tuple[str, ...] = (
-    "school",
-    "sex",
     "address",
     "higher",
     "famsup",
@@ -68,6 +68,8 @@ MODEL_LABELS: tuple[tuple[str, str], ...] = (
 )
 
 #: Subgrupos de equidad exigidos por la Tarea C (sección 3 del issue).
+#: Se auditan aunque no sean predictores: la equidad se mide sobre el resultado,
+#: no sobre las entradas del modelo.
 SUBGROUP_COLUMNS: tuple[str, ...] = ("sex", "school")
 
 #: Brecha máxima tolerada entre subgrupos antes de declarar una diferencia relevante.
@@ -101,18 +103,19 @@ CONCLUSION: tuple[str, ...] = (
     "El agrupamiento (Tarea A) separó dos perfiles — buen desempeño con buena asistencia, "
     "23,6 % desaprobados, frente a desempeño bajo con ausencias frecuentes, 71,4 % — y los "
     "modelos supervisados (Tarea B) superan con holgura a la línea base: la regresión "
-    "logística alcanzó F1 0,79 y recall 0,73, y el bosque aleatorio subió el recall a 0,81, "
-    "es decir, detecta a 4 de cada 5 estudiantes en riesgo que la línea base ignora por "
-    "completo (recall 0,00). Predecir bien a la mayoría no alcanza: lo que importa es no "
+    "logística alcanzó F1 0,77 y recall 0,69, y el bosque aleatorio subió el recall a 0,77, "
+    "es decir, detecta a más de 3 de cada 4 estudiantes en riesgo que la línea base ignora "
+    "por completo (recall 0,00). Predecir bien a la mayoría no alcanza: lo que importa es no "
     "perder a quien está en riesgo.",
     "2. Con qué límites. El accuracy de la línea base (0,67) mostraba justo el peligro de "
-    "conformarse con la mayoría. La regresión logística todavía se pierde 7 de los 26 "
+    "conformarse con la mayoría. La regresión logística todavía se pierde 8 de los 26 "
     "desaprobados del test y el bosque aleatorio comete 9 falsos positivos: ningún modelo "
     "está libre de error y cada error tiene consecuencias humanas. La equidad (Tarea C) "
-    "mostró brechas relevantes: el recall para mujeres (0,65) es 24 puntos menor que para "
-    "varones (0,89), y el resultado aparentemente perfecto de la escuela MS se apoya en solo "
-    "10 estudiantes y 3 desaprobados, por lo que es una métrica ruidosa. Además, sex y school "
-    "son entradas del modelo y pueden actuar como proxies de otras características. Por último, "
+    "mostró brechas relevantes: el recall para mujeres (0,65) es 13 puntos menor que para "
+    "varones (0,78), y el resultado aparentemente perfecto de la escuela MS se apoya en solo "
+    "10 estudiantes y 3 desaprobados, por lo que es una métrica ruidosa. sex y school salieron "
+    "del modelo: costaban unos 4 puntos de recall, y hoy entran solo para auditar la equidad "
+    "en la Tarea C, no como predictores. Por último, "
     "el dataset cubre una sola materia, en dos escuelas y 395 estudiantes: los resultados no "
     "se generalizan a otra institución sin volver a validarlos.",
     "3. Cómo usar el resultado sin perjudicar al estudiante. El modelo sirve para priorizar "

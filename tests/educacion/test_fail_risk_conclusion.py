@@ -22,7 +22,15 @@ from src.infrastructure.sklearn.educacion_modelos import SklearnEntrenadorRiesgo
 RAIZ = Path(__file__).resolve().parents[2]
 
 #: Fragmentos que la conclusión debe citar de la corrida real (semilla 42).
-RESULTADOS_ESPERADOS = ("0,79", "0,73", "0,81", "23,6", "71,4", "0,65", "0,89")
+RESULTADOS_ESPERADOS = (
+    "0,77",
+    "0,69",
+    "23,6",
+    "71,4",
+    "0,65",
+    "0,78",
+    "13 puntos",
+)
 
 
 def test_conclusion_is_a_single_page_in_spanish() -> None:

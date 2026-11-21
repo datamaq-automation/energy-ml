@@ -15,6 +15,7 @@ from src.domain.educacion.modelos import (
     DESAPROBADO,
     FAIRNESS_GAP_THRESHOLD,
     MIN_SUBGROUP_N,
+    MODEL_FEATURES,
 )
 
 
@@ -98,7 +99,7 @@ def analyze_fairness(
 
     Causas consideradas: subgrupos chicos (métrica ruidosa), desbalance de la
     etiqueta entre subgrupos, y el uso de la propia variable como predictora
-    (puede actuar como proxy de otras características).
+    (solo si además es predictor: puede actuar como proxy de otras características).
     """
     analysis: dict[str, dict[str, object]] = {}
     for column, table in tables.items():
@@ -120,7 +121,7 @@ def analyze_fairness(
                 f"({positive_rates.min():.0%} vs {positive_rates.max():.0%}): "
                 "la etiqueta está desbalanceada por subgrupo"
             )
-        if relevant:
+        if relevant and column in MODEL_FEATURES:
             causes.append(
                 f"'{column}' también es variable del modelo: puede actuar como proxy "
                 "de otras características"

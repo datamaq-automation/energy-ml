@@ -34,7 +34,8 @@ from src.infrastructure.sklearn.educacion_modelos import (
     build_random_forest,
 )
 
-#: Las 18 variables permitidas por la sección 2 del issue para el momento declarado.
+#: Las 16 variables permitidas por la sección 2 del issue para el momento declarado.
+#: sex y school quedaron fuera del modelo (decisión del PR) y se auditan en la Tarea C.
 ESPERADAS = {
     "G1",
     "studytime",
@@ -43,8 +44,6 @@ ESPERADAS = {
     "higher",
     "Medu",
     "Fedu",
-    "school",
-    "sex",
     "age",
     "address",
     "famsup",
@@ -116,7 +115,7 @@ def test_build_target_requires_g3(students: pd.DataFrame) -> None:
 
 def test_model_features_match_issue_allowed_set() -> None:
     assert set(MODEL_FEATURES) == ESPERADAS
-    assert len(MODEL_FEATURES) == 18
+    assert len(MODEL_FEATURES) == 16
 
 
 def test_model_features_exclude_g2_and_g3() -> None:
@@ -200,18 +199,18 @@ def test_scaler_fits_only_on_train(
 
 
 def test_encoder_ignores_unseen_category(students: pd.DataFrame) -> None:
-    gp_only = students[students["school"] == "GP"]
-    x_gp = select_model_features(gp_only)
-    y_gp = build_target(gp_only)
+    urban_only = students[students["address"] == "U"]
+    x_urban = select_model_features(urban_only)
+    y_urban = build_target(urban_only)
     pipeline = build_logistic_regression()
-    pipeline.fit(x_gp, y_gp)
+    pipeline.fit(x_urban, y_urban)
 
     onehot = pipeline.named_steps["pre"].named_transformers_["cat"].named_steps["onehot"]
-    school_idx = CATEGORICAL_FEATURES.index("school")
-    assert list(onehot.categories_[school_idx]) == ["GP"]
+    address_idx = CATEGORICAL_FEATURES.index("address")
+    assert list(onehot.categories_[address_idx]) == ["U"]
 
-    ms_rows = select_model_features(students[students["school"] == "MS"])
-    predictions = pipeline.predict(ms_rows)
+    rural_rows = select_model_features(students[students["address"] == "R"])
+    predictions = pipeline.predict(rural_rows)
     assert set(np.unique(predictions)) <= {APROBADO, DESAPROBADO}
 
 

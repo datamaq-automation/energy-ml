@@ -242,7 +242,9 @@ def run_task_c(
 
     predictions = models[best].predict(x_test)
     fairness = {
-        column: subgroup_metrics(y_test, predictions, x_test[column]) for column in SUBGROUP_COLUMNS
+        # Los subgrupos salen del dataset completo: hoy ya no son entradas del modelo.
+        column: subgroup_metrics(y_test, predictions, df.loc[x_test.index, column])
+        for column in SUBGROUP_COLUMNS
     }
     for column, table in fairness.items():
         bitacora.info(f"\nRecall y precisión por '{column}' (clase positiva = desaprobado):")
