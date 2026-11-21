@@ -6,7 +6,18 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from educacion.fail_risk import (
+from src.adapters.educacion.gateways.estudiantes_csv import (
+    EstudiantesCsv,
+    load_students,
+)
+from src.application.educacion.evaluacion import baseline_predictions, evaluate_predictions
+from src.application.educacion.preparacion import (
+    build_target,
+    select_model_features,
+    split_train_test,
+)
+from src.application.educacion.tareas import run_task_b
+from src.domain.educacion.modelos import (
     APROBADO,
     CATEGORICAL_FEATURES,
     DESAPROBADO,
@@ -15,15 +26,12 @@ from educacion.fail_risk import (
     NUMERIC_FEATURES,
     SEED,
     TEST_SIZE,
-    baseline_predictions,
+)
+from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.educacion_modelos import (
+    SklearnEntrenadorRiesgo,
     build_logistic_regression,
     build_random_forest,
-    build_target,
-    evaluate_predictions,
-    load_students,
-    run_task_b,
-    select_model_features,
-    split_train_test,
 )
 
 #: Las 18 variables permitidas por la sección 2 del issue para el momento declarado.
@@ -341,9 +349,10 @@ def test_models_beat_baseline_recall(
 # ------------------------------------------------------------------------------
 
 
-def test_run_task_b_prints_full_report(capsys: pytest.CaptureFixture[str]) -> None:
-    result = run_task_b()
-    out = capsys.readouterr().out
+def test_run_task_b_prints_full_report(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("INFO", logger="backend-api"):
+        result = run_task_b(EstudiantesCsv(), SklearnEntrenadorRiesgo(), logger)
+    out = caplog.text
 
     assert "Tarea B" in out
     assert "Momento de predicción" in out

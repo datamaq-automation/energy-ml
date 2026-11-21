@@ -9,20 +9,29 @@ import pandas as pd
 import pytest
 from sklearn.pipeline import Pipeline
 
-from educacion.fail_risk import (
+from src.adapters.educacion.gateways.estudiantes_csv import (
+    EstudiantesCsv,
+    load_students,
+)
+from src.application.educacion.evaluacion import (
+    analyze_fairness,
+    evaluate_predictions,
+    pick_best_model,
+    subgroup_metrics,
+)
+from src.application.educacion.preparacion import split_train_test
+from src.application.educacion.tareas import run_task_c
+from src.domain.educacion.modelos import (
     FAIRNESS_GAP_THRESHOLD,
     MIN_SUBGROUP_N,
     MODEL_FEATURES,
     RECOMMENDATION,
     SUBGROUP_COLUMNS,
-    analyze_fairness,
-    evaluate_predictions,
+)
+from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.educacion_modelos import (
+    SklearnEntrenadorRiesgo,
     fit_real_models,
-    load_students,
-    pick_best_model,
-    run_task_c,
-    split_train_test,
-    subgroup_metrics,
 )
 
 
@@ -264,9 +273,10 @@ def test_recommendation_is_safety_first() -> None:
 # ------------------------------------------------------------------------------
 
 
-def test_run_task_c_prints_full_report(capsys: pytest.CaptureFixture[str]) -> None:
-    result = run_task_c()
-    out = capsys.readouterr().out
+def test_run_task_c_prints_full_report(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("INFO", logger="backend-api"):
+        result = run_task_c(EstudiantesCsv(), SklearnEntrenadorRiesgo(), logger)
+    out = caplog.text
 
     assert "Tarea C" in out
     assert "Modelo evaluado: logistic_regression" in out
@@ -290,8 +300,12 @@ def test_run_task_c_prints_full_report(capsys: pytest.CaptureFixture[str]) -> No
         assert set(info) == {"recall_gap", "precision_gap", "relevant", "small_groups", "causes"}
 
 
-def test_run_task_c_is_consistent_with_task_b(task_c: SimpleNamespace) -> None:
-    result = run_task_c()
+def test_run_task_c_is_consistent_with_task_b(
+    task_c: SimpleNamespace,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level("INFO", logger="backend-api"):
+        result = run_task_c(EstudiantesCsv(), SklearnEntrenadorRiesgo(), logger)
     assert result["best_model"] == task_c.best
     for column in SUBGROUP_COLUMNS:
         pd.testing.assert_frame_equal(result["fairness"][column], task_c.fairness[column])
