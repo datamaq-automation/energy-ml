@@ -178,6 +178,7 @@
   from pydantic import Field
   from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
   class Settings(BaseSettings):
       model_config = SettingsConfigDict(
           env_file=".env",
@@ -204,7 +205,10 @@
       NILM_UMBRAL_KW: float | None = Field(default=None)  # None = automático (Otsu)
       NILM_SEPARACION_MINIMA: float = Field(default=0.8)
       NILM_EPS_KW: float | None = Field(default=None)  # None = automático (Freedman–Diaconis / ruido)
-      NILM_MIN_EVENTOS: int | None = Field(default=None)  # None = automático (uno por día, al menos 3)
+      NILM_MIN_EVENTOS: int | None = Field(
+          default=None
+      )  # None = automático (uno por día, al menos 3)
+
 
   @lru_cache()
   def get_settings() -> Settings:
@@ -221,6 +225,7 @@
 
   from src.infrastructure.settings.config import get_settings
 
+
   def setup_logging() -> logging.Logger:
       settings = get_settings()
       log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
@@ -233,6 +238,7 @@
       logger.setLevel(log_level)
       logger.propagate = False
       return logger
+
 
   logger = setup_logging()
   ```
