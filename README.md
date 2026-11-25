@@ -34,7 +34,7 @@ Este proyecto es un **caso de estudio real** del curso **[Procesamiento de Apren
 
 ### Proyecto complementario: pronóstico de residuos
 
-El directorio [`datos/residuos/`](datos/residuos/README.md) contiene un caso separado de pronóstico de residuos sólidos mensuales de Ann Arbor: datos abiertos, preparación de la serie, comparación de modelos y resultados de validación. No forma parte del flujo principal de identificación NILM.
+El caso [`residuos`](datos/residuos/README.md) (código en `src/*/residuos`, datos en `datos/residuos/`) es un caso separado de pronóstico de residuos sólidos mensuales de Ann Arbor: datos abiertos, preparación de la serie, comparación de modelos y resultados de validación. No forma parte del flujo principal de identificación NILM.
 
 ---
 

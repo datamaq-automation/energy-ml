@@ -60,6 +60,8 @@ def test_predice_con_la_primera_regla_que_cubre() -> None:
 
 
 def test_cobertura_total() -> None:
-    conjunto = ConjuntoReglas([regla(GRANDE, soporte=3), regla(CHICO, soporte=5)], numero_ejemplos=10)
+    conjunto = ConjuntoReglas(
+        [regla(GRANDE, soporte=3), regla(CHICO, soporte=5)], numero_ejemplos=10
+    )
     assert conjunto.cobertura_total() == 0.8
     assert ConjuntoReglas([regla(GRANDE)], numero_ejemplos=0).cobertura_total() == 0.0

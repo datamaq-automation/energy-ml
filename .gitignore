@@ -29,7 +29,7 @@ htmlcov/
 # Scripts locales de extracción (no versionados)
 tmp/
 
-# Dataset UCI Air Quality (regenerable con src/medioambiente/data.py)
+# Dataset UCI Air Quality (regenerable con src/adapters/medioambiente/gateways/air_quality_uci_gateway.py)
 datos/
 # Resultados del entrenamiento: los genera cada alumno
 data/output/*

@@ -6,17 +6,21 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.medioambiente.data import CSV_FILENAME, DEFAULT_DATA_DIR, load_air_quality
-from src.medioambiente.preprocess import construir_etiqueta
-from src.medioambiente.unsupervised import (
-    COLUMNAS_AGROUPAMIENTO,
+from src.adapters.medioambiente.gateways.air_quality_uci_gateway import (
+    CSV_FILENAME,
+    DEFAULT_DATA_DIR,
+    load_air_quality,
+)
+from src.domain.medioambiente.value_objects import COLUMNAS_AGRUPAMIENTO
+from src.infrastructure.graficos.medioambiente import graficar_diagnosticos
+from src.infrastructure.sklearn.medioambiente_agrupamiento import (
     agrupar_meteo,
     calcular_diagnosticos_k,
-    graficar_diagnosticos,
     mejor_k,
     proporcion_episodios,
     resumen_grupos,
 )
+from src.infrastructure.sklearn.medioambiente_preparacion import construir_etiqueta
 
 
 def _datos_blobs(n_por_grupo: int = 30) -> pd.DataFrame:
@@ -26,7 +30,7 @@ def _datos_blobs(n_por_grupo: int = 30) -> pd.DataFrame:
     templado = rng.normal(loc=[18.0, 55.0, 0.9], scale=0.5, size=(n_por_grupo, 3))
     calido = rng.normal(loc=[32.0, 30.0, 1.4], scale=0.5, size=(n_por_grupo, 3))
     datos = np.vstack([frio, templado, calido])
-    return pd.DataFrame(datos, columns=COLUMNAS_AGROUPAMIENTO)
+    return pd.DataFrame(datos, columns=COLUMNAS_AGRUPAMIENTO)
 
 
 def test_diagnosticos_cubre_k_de_2_a_6() -> None:

@@ -60,9 +60,43 @@ tu fork / rama de trabajo  ──PR──►  develop  ──(release)──► 
 
 ## 4. Reglas de calidad del repo
 
+### Estructura de carpetas de tu contribución
+
+Todo aporte con código sigue la estructura de [`srs-spec-backend-fastapi.md` §4.2](https://github.com/datamaq-automation/spec/blob/main/backend/srs-spec-backend-fastapi.md). Tu caso es un *bounded context* con un nombre que grita el dominio (`medioambiente`, `logistica`, `residuos`…) y vive en las cuatro capas de `src/`:
+
+```
+src/
+├── domain/{tu_caso}/              # Reglas del negocio, sin pandas ni sklearn
+│   ├── __init__.py                # vacío (0 bytes)
+│   ├── entities.py                # Entidad con identidad (p. ej. el informe de una corrida)
+│   ├── value_objects.py           # Constantes del problema y resultados inmutables (métricas)
+│   ├── services.py                # Reglas puras: anti-fuga, elegir el mejor modelo, etc.
+│   ├── repositories.py            # Puertos (Protocol): de dónde salen los datos y quién modela
+│   ├── events.py                  # Eventos de dominio (p. ej. "terminó la Tarea A")
+│   └── exceptions.py              # Errores de negocio (heredan de ValueError)
+├── application/{tu_caso}/
+│   ├── use_cases/{verbo}.py       # class {Verbo}UseCase con execute(request) -> response
+│   ├── dtos/{verbo}_request.py    # class {Verbo}Request (pydantic)
+│   ├── dtos/{verbo}_response.py   # class {Verbo}Response (pydantic)
+│   └── mappers/{entidad}_mapper.py
+├── adapters/{tu_caso}/
+│   ├── controllers/               # Arma el request y llama al caso de uso
+│   ├── presenters/                # Convierte la respuesta en texto/JSON
+│   └── gateways/                  # Lectura/descarga de tu dataset (implementa el repositorio)
+└── infrastructure/                # Detalles: sklearn/{tu_caso}_*.py, graficos/, cli/, fastapi/
+```
+
+Los seis archivos del dominio y las seis carpetas de `application` y `adapters` son **obligatorios**, y cada uno tiene que tener contenido real: un archivo de menos de 10 líneas o que nadie importa no pasa `test_clean_design.py`. No hay código fuera de `src/` y `tests/`: los datos van en `datos/{tu_caso}/` y las pruebas en `tests/unit/{tu_caso}/`.
+
+**Ejemplos completos para copiar el patrón:** `medioambiente`, `logistica` y `residuos`. En los tres, pandas y sklearn quedan en `infrastructure/sklearn/` y el dominio trata la tabla como un tipo opaco. Los puertos de `repositories.py` se prueban con dobles en `tests/unit/{tu_caso}/test_caso_de_uso.py`.
+
+La estructura la verifica `tests/test_estructura_canonica.py` (también corre como `python tests/test_estructura_canonica.py`).
+
+### Reglas de código
+
 Estas reglas las verifican tests automáticos (`tests/test_architecture.py`, `test_clean_design.py`, `test_god_components.py`):
 
-- Todo archivo `.py` empieza con su ruta relativa en un docstring: `"""src/medioambiente/data.py — descripción."""`.
+- Todo archivo `.py` empieza con su ruta relativa en un docstring: `"""src/domain/medioambiente/services.py — descripción."""`.
 - Los `__init__.py` están vacíos (0 bytes).
 - Imports absolutos (`from src...`), sin imports relativos.
 - Sin `print()` en `src/`: usá el logger del proyecto.
@@ -77,6 +111,7 @@ Estas reglas las verifican tests automáticos (`tests/test_architecture.py`, `te
 ./run.sh lint
 ./run.sh test
 python tests/test_architecture.py
+python tests/test_estructura_canonica.py
 ```
 
 Si algo falla, el PR no está listo. Si no entendés un error, preguntá en el issue: es una consulta válida y cuenta como aporte.

@@ -16,14 +16,30 @@ def campos(modelo: type) -> set[str]:
 
 def test_contrato_de_la_respuesta() -> None:
     assert campos(IdentificarCargasResponse) == {
-        "medidor", "mediciones", "eventos", "encendidos", "apagados", "eventos_sin_grupo",
-        "dias", "potencia_media_kw", "cargas", "umbral", "agrupamiento", "serie",
-        "detalle_eventos", "histograma",
+        "medidor",
+        "mediciones",
+        "eventos",
+        "encendidos",
+        "apagados",
+        "eventos_sin_grupo",
+        "dias",
+        "potencia_media_kw",
+        "cargas",
+        "umbral",
+        "agrupamiento",
+        "serie",
+        "detalle_eventos",
+        "histograma",
     }
 
 
 def test_contrato_de_cada_carga() -> None:
     assert campos(CargaResponse) == {
-        "potencia_tipica_kw", "encendidos", "apagados", "ciclos", "ciclos_por_dia",
-        "on_off", "dispersion_kw",
+        "potencia_tipica_kw",
+        "encendidos",
+        "apagados",
+        "ciclos",
+        "ciclos_por_dia",
+        "on_off",
+        "dispersion_kw",
     }

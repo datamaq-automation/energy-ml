@@ -25,9 +25,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from src.domain.logistica.models import (
+from src.domain.logistica.services import (
+    describe_cluster_business_profile,
+    validate_no_data_leakage,
+)
+from src.domain.logistica.value_objects import (
     CATEGORICAL_FEATURES,
-    FORBIDDEN_COLUMNS,
     KMEANS_FEATURES,
     NUMERIC_FEATURES,
     TARGET_COLUMN,
@@ -35,29 +38,12 @@ from src.domain.logistica.models import (
     ClusterProfile,
     SegmentRecall,
     SupervisedModelMetrics,
-    describe_cluster_business_profile,
-    validate_no_data_leakage,
 )
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 RANDOM_STATE: int = 42
-
-
-def load_and_prepare_orders(csv_path: Path, max_rows: int | None = None) -> pd.DataFrame:
-    """Carga el CSV de pedidos, desglosa la fecha del pedido y elimina columnas prohibidas."""
-    df = pd.read_csv(csv_path, encoding="latin-1", nrows=max_rows)
-    order_dt = pd.to_datetime(df["order date (DateOrders)"], format="mixed")
-    df["order_month"] = order_dt.dt.month
-    df["order_dayofweek"] = order_dt.dt.day_of_week
-    df["order_hour"] = order_dt.dt.hour
-
-    drop_cols = [c for c in FORBIDDEN_COLUMNS if c != TARGET_COLUMN and c in df.columns]
-    cleaned = df.drop(columns=drop_cols)
-    feature_cols = [c for c in cleaned.columns if c != TARGET_COLUMN]
-    validate_no_data_leakage(feature_cols)
-    return cleaned
 
 
 def run_task_a_clustering(
