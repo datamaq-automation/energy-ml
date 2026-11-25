@@ -2,7 +2,7 @@
 
 **Caso de estudio:** DataCo Smart Supply Chain Dataset (`datos/logistica/pedidos.csv`, $N = 180.519$ pedidos)  
 **Módulo de implementación:** [`src/infrastructure/sklearn/logistics_pipeline.py`](../src/infrastructure/sklearn/logistics_pipeline.py)  
-**Reglas de dominio y validación anti-fuga:** [`src/domain/logistica/models.py`](../src/domain/logistica/models.py)  
+**Reglas de dominio y validación anti-fuga:** [`src/domain/logistica/services.py`](../src/domain/logistica/services.py) y [`value_objects.py`](../src/domain/logistica/value_objects.py)  
 **CLI ejecutable:** [`src/infrastructure/cli/analizar_logistica.py`](../src/infrastructure/cli/analizar_logistica.py)
 
 ---

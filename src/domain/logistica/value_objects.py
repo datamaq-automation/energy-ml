@@ -1,4 +1,4 @@
-"""src/domain/logistica/models.py — Modelos de dominio y reglas anti-fuga de datos para logística."""
+"""src/domain/logistica/value_objects.py — Vocabulario y resultados inmutables del caso de retrasos."""
 
 from __future__ import annotations
 
@@ -88,25 +88,3 @@ class SegmentRecall:
     order_count: int
     actual_late_rate: float
     recall: float
-
-
-def validate_no_data_leakage(feature_columns: list[str] | tuple[str, ...]) -> None:
-    """Verifica que ninguna variable prohibida (fuga de datos) esté presente en X."""
-    forbidden_set = {col.lower().strip() for col in FORBIDDEN_COLUMNS}
-    leaked = [col for col in feature_columns if col.lower().strip() in forbidden_set]
-    if leaked:
-        raise ValueError(f"Data leakage detectado: las columnas {leaked} están prohibidas en X.")
-
-
-def describe_cluster_business_profile(
-    scheduled_days_mean: float,
-    quantity_mean: float,
-    latitude_mean: float,
-) -> str:
-    """Genera una descripción en lenguaje de negocio según los centroides del grupo."""
-    hub = "Hub Caribe (PR)" if latitude_mean < 25.0 else "Hub EE.UU. Continental"
-    if quantity_mean >= 3.5:
-        return f"Pedidos mayoristas de alto volumen y alto ticket ({hub})"
-    if scheduled_days_mean <= 2.0:
-        return f"Envíos rápidos/urgentes (1-2 días programados) desde {hub}"
-    return f"Envíos estándar (4 días programados) de bajo volumen desde {hub}"
