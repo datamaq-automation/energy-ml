@@ -1,0 +1,3 @@
+# Los scripts de shell se ejecutan con bash también en Windows (Git Bash):
+# con finales CRLF, `set -o pipefail\r` rompe run.sh.
+*.sh text eol=lf
