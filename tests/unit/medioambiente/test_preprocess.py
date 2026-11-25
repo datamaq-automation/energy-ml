@@ -2,7 +2,8 @@
 
 import pandas as pd
 
-from src.medioambiente.preprocess import COLUMNA_ETIQUETA, construir_etiqueta
+from src.domain.medioambiente.value_objects import COLUMNA_ETIQUETA
+from src.infrastructure.sklearn.medioambiente_preparacion import construir_etiqueta
 
 
 def _df_ejemplo() -> pd.DataFrame:

@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.medioambiente.data import (
+from src.adapters.medioambiente.gateways.air_quality_uci_gateway import (
     CSV_FILENAME,
     DEFAULT_DATA_DIR,
     VALOR_FALTANTE,

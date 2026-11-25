@@ -4,16 +4,19 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.medioambiente.data import CSV_FILENAME, DEFAULT_DATA_DIR, load_air_quality
-from src.medioambiente.preprocess import (
-    COLUMNA_ETIQUETA,
-    COLUMNAS_FEATURES,
+from src.adapters.medioambiente.gateways.air_quality_uci_gateway import (
+    CSV_FILENAME,
+    DEFAULT_DATA_DIR,
+    load_air_quality,
+)
+from src.domain.medioambiente.value_objects import COLUMNA_ETIQUETA, COLUMNAS_FEATURES
+from src.infrastructure.sklearn.medioambiente_preparacion import (
     construir_etiqueta,
     construir_features,
 )
-from src.medioambiente.split import split_aleatorio
-from src.medioambiente.supervised import predecir_particion
-from src.medioambiente.temporal import (
+from src.infrastructure.sklearn.medioambiente_split import split_aleatorio
+from src.infrastructure.sklearn.medioambiente_supervisado import predecir_particion
+from src.infrastructure.sklearn.medioambiente_temporal import (
     comparar_splits,
     detectar_cambio_distribucion,
     split_temporal,

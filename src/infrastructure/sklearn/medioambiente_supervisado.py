@@ -1,4 +1,4 @@
-"""src/medioambiente/supervised.py — Tarea B: modelos supervisados con split aleatorio."""
+"""src/infrastructure/sklearn/medioambiente_supervisado.py — Tarea B: modelos supervisados con split aleatorio."""
 
 from __future__ import annotations
 
@@ -16,15 +16,15 @@ from sklearn.metrics import (
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 
-from src.infrastructure.settings.logger import logger
-from src.medioambiente.preprocess import (
+from src.domain.medioambiente.exceptions import ColumnasFaltantesError
+from src.domain.medioambiente.value_objects import (
     COLUMNA_ETIQUETA,
     COLUMNAS_FEATURES,
-    crear_transformador,
+    PROFUNDIDADES_ARBOL,
+    SEMILLA,
 )
-
-SEMILLA = 42
-PROFUNDIDADES_ARBOL = [3, 4, 5, 6]
+from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.medioambiente_preparacion import crear_transformador
 
 
 def separar_xy(particion: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
@@ -32,7 +32,7 @@ def separar_xy(particion: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     requeridas = [*COLUMNAS_FEATURES, COLUMNA_ETIQUETA]
     ausentes = [c for c in requeridas if c not in particion.columns]
     if ausentes:
-        raise ValueError(f"Faltan columnas en la partición: {ausentes}")
+        raise ColumnasFaltantesError(f"Faltan columnas en la partición: {ausentes}", ausentes)
     return particion[COLUMNAS_FEATURES].copy(), particion[COLUMNA_ETIQUETA].copy()
 
 

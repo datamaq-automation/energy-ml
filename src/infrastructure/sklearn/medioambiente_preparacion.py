@@ -1,4 +1,4 @@
-"""src/medioambiente/preprocess.py — Etiquetado, features anticipables y transformación."""
+"""src/infrastructure/sklearn/medioambiente_preparacion.py — Etiquetado, features anticipables y transformación."""
 
 from __future__ import annotations
 
@@ -7,32 +7,15 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from src.domain.medioambiente.exceptions import ColumnasFaltantesError
+from src.domain.medioambiente.value_objects import (
+    COLUMNA_CO,
+    COLUMNA_ETIQUETA,
+    COLUMNAS_FEATURES,
+    COLUMNAS_METEO,
+    UMBRAL_EPISODIO_MG_M3,
+)
 from src.infrastructure.settings.logger import logger
-
-COLUMNA_CO = "CO(GT)"
-COLUMNA_ETIQUETA = "episodio"
-UMBRAL_EPISODIO_MG_M3 = 2.5  # Umbral pedagógico (mg/m³), no normativo.
-
-COLUMNAS_METEO = ("T", "RH", "AH")
-COLUMNAS_CALENDARIO = ("hora", "dia_semana", "mes")
-# Features conocidas ANTES de la hora a predecir: meteo en t-1/t-2 (por reloj) + calendario.
-# Lista (no tuple) para poder indexar: df[COLUMNAS_FEATURES].
-COLUMNAS_FEATURES: list[str] = [f"{c}_t{lag}" for c in COLUMNAS_METEO for lag in (1, 2)] + list(
-    COLUMNAS_CALENDARIO
-)
-# Nunca pueden entrar como entrada: salen de la misma hora o generan la etiqueta.
-COLUMNAS_PROHIBIDAS = (
-    "CO(GT)",
-    "PT08.S1(CO)",
-    "NMHC(GT)",
-    "C6H6(GT)",
-    "PT08.S2(NMHC)",
-    "NOx(GT)",
-    "PT08.S3(NOx)",
-    "NO2(GT)",
-    "PT08.S4(NO2)",
-    "PT08.S5(O3)",
-)
 
 
 def construir_etiqueta(df: pd.DataFrame, umbral: float = UMBRAL_EPISODIO_MG_M3) -> pd.DataFrame:
@@ -67,7 +50,9 @@ def construir_features(df: pd.DataFrame) -> pd.DataFrame:
     requeridas = ("Date", "Time", *COLUMNAS_METEO)
     ausentes = [c for c in requeridas if c not in df.columns]
     if ausentes:
-        raise ValueError(f"Faltan columnas para construir features: {ausentes}")
+        raise ColumnasFaltantesError(
+            f"Faltan columnas para construir features: {ausentes}", ausentes
+        )
     marca = df["Date"].astype(str).str.strip() + " " + df["Time"].astype(str).str.strip()
     salida = df.copy()
     salida["fecha"] = pd.to_datetime(marca, format="%d/%m/%Y %H.%M.%S")

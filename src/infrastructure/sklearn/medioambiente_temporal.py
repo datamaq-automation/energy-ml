@@ -1,14 +1,19 @@
-"""src/medioambiente/temporal.py — Tarea C: split temporal y detección de cambio de distribución."""
+"""src/infrastructure/sklearn/medioambiente_temporal.py — Tarea C: split temporal y detección de cambio de distribución."""
 
 from __future__ import annotations
 
+from typing import cast
+
 import pandas as pd
 
+from src.domain.medioambiente.exceptions import ColumnasFaltantesError, ProporcionInvalidaError
+from src.domain.medioambiente.services import desvio_estandarizado, hay_cambio
+from src.domain.medioambiente.value_objects import (
+    COLUMNAS_FEATURES,
+    PROPORCION_TRAIN,
+    UMBRAL_CAMBIO,
+)
 from src.infrastructure.settings.logger import logger
-from src.medioambiente.preprocess import COLUMNAS_FEATURES
-
-PROPORCION_TRAIN = 0.8
-UMBRAL_CAMBIO = 0.5  # desviación estándar de la media de train (tamaño de efecto)
 
 
 def split_temporal(
@@ -21,9 +26,11 @@ def split_temporal(
     disponibles para entrenar).
     """
     if "fecha" not in df.columns:
-        raise ValueError("Falta la columna 'fecha': aplicá construir_features() primero.")
+        raise ColumnasFaltantesError(
+            "Falta la columna 'fecha': aplicá construir_features() primero.", ["fecha"]
+        )
     if not 0.0 < proporcion_train < 1.0:
-        raise ValueError("proporcion_train debe estar entre 0 y 1 (exclusivo).")
+        raise ProporcionInvalidaError("proporcion_train debe estar entre 0 y 1 (exclusivo).")
     ordenado = df.sort_values("fecha", kind="stable")
     corte = int(len(ordenado) * proporcion_train)
     train = ordenado.iloc[:corte].reset_index(drop=True)
@@ -62,17 +69,17 @@ def detectar_cambio_distribucion(
     """
     filas = []
     for columna in COLUMNAS_FEATURES:
-        media_train = train[columna].mean()
-        media_test = test[columna].mean()
-        desvio_train = train[columna].std()
-        desvio = (media_test - media_train) / desvio_train if desvio_train > 0 else 0.0
+        media_train = cast(float, train[columna].mean())
+        media_test = cast(float, test[columna].mean())
+        desvio_train = cast(float, train[columna].std())
+        desvio = desvio_estandarizado(media_train, media_test, desvio_train)
         filas.append(
             {
                 "feature": columna,
                 "media_train": media_train,
                 "media_test": media_test,
                 "desvio_estandarizado": desvio,
-                "cambio": bool(abs(desvio) > umbral),
+                "cambio": hay_cambio(desvio, umbral),
             }
         )
     resultado = pd.DataFrame(filas)

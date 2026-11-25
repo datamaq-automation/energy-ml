@@ -3,11 +3,8 @@
 import pandas as pd
 import pytest
 
-from src.medioambiente.preprocess import (
-    COLUMNAS_FEATURES,
-    COLUMNAS_PROHIBIDAS,
-    construir_features,
-)
+from src.domain.medioambiente.value_objects import COLUMNAS_FEATURES, COLUMNAS_PROHIBIDAS
+from src.infrastructure.sklearn.medioambiente_preparacion import construir_features
 
 
 def _df_con_hueco() -> pd.DataFrame:

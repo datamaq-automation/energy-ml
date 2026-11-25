@@ -1,4 +1,8 @@
-"""src/medioambiente/data.py — Descarga y carga del dataset Air Quality (UCI #360)."""
+"""src/adapters/medioambiente/gateways/air_quality_uci_gateway.py — Dataset Air Quality (UCI #360).
+
+Implementa el puerto RepositorioCalidadAire: descarga el zip de UCI si hace
+falta y lee el CSV (separador ';', coma decimal, -200 = faltante).
+"""
 
 from __future__ import annotations
 
@@ -9,7 +13,7 @@ from urllib.request import urlopen
 
 import pandas as pd
 
-from src.infrastructure.settings.logger import logger
+from src.domain.medioambiente.exceptions import ColumnasFaltantesError
 
 UCI_ZIP_URL = "https://archive.ics.uci.edu/static/public/360/air+quality.zip"
 CSV_FILENAME = "AirQualityUCI.csv"
@@ -42,15 +46,12 @@ def download_dataset(destino: Path = DEFAULT_DATA_DIR, sobrescribir: bool = Fals
     destino.mkdir(parents=True, exist_ok=True)
     destino_csv = destino / CSV_FILENAME
     if destino_csv.exists() and not sobrescribir:
-        logger.info("Dataset ya presente en %s; se omite la descarga.", destino_csv)
         return destino_csv
-    logger.info("Descargando Air Quality desde %s", UCI_ZIP_URL)
     with urlopen(UCI_ZIP_URL, timeout=60) as respuesta:
         contenido = respuesta.read()
     with zipfile.ZipFile(io.BytesIO(contenido)) as archivo_zip:
         with archivo_zip.open(CSV_FILENAME) as origen, destino_csv.open("wb") as salida:
             salida.write(origen.read())
-    logger.info("Dataset extraído en %s (%d bytes)", destino_csv, destino_csv.stat().st_size)
     return destino_csv
 
 
@@ -65,22 +66,27 @@ def load_air_quality(ruta: Path | None = None) -> pd.DataFrame:
             f"No se encontró {csv_path}. Ejecutá download_dataset() para obtenerlo."
         )
     df = pd.read_csv(csv_path, sep=";", decimal=",")
-    filas_antes, columnas_antes = df.shape
     df = df.dropna(axis=0, how="all").dropna(axis=1, how="all")
     df = df.replace(VALOR_FALTANTE, float("nan"))
-    if (df == VALOR_FALTANTE).any().any():  # pragma: no cover - defensa redundante
-        raise ValueError(f"Quedaron valores {VALOR_FALTANTE} tras la limpieza de {csv_path}")
     columnas_faltantes = [c for c in COLUMNAS_ESPERADAS if c not in df.columns]
     if columnas_faltantes:
-        raise ValueError(
-            f"El archivo {csv_path} no tiene las columnas esperadas: {columnas_faltantes}"
+        raise ColumnasFaltantesError(
+            f"El archivo {csv_path} no tiene las columnas esperadas: {columnas_faltantes}",
+            columnas_faltantes,
         )
-    logger.info(
-        "Air Quality cargado: %d filas x %d columnas "
-        "(descartadas %d filas vacías y %d columnas vacías)",
-        df.shape[0],
-        df.shape[1],
-        filas_antes - df.shape[0],
-        columnas_antes - df.shape[1],
-    )
     return df
+
+
+class AirQualityUciGateway:
+    """Fuente de mediciones horarias: CSV local, descargado de UCI si todavía no está."""
+
+    def __init__(self, carpeta: Path = DEFAULT_DATA_DIR, descargar_si_falta: bool = True) -> None:
+        self._carpeta = carpeta
+        self._descargar_si_falta = descargar_si_falta
+
+    def cargar(self) -> pd.DataFrame:
+        """Devuelve la tabla cruda con los -200 convertidos a NaN."""
+        ruta = self._carpeta / CSV_FILENAME
+        if not ruta.exists() and self._descargar_si_falta:
+            ruta = download_dataset(self._carpeta)
+        return load_air_quality(ruta)
