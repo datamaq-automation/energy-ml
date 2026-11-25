@@ -19,9 +19,14 @@ La descarga analizada tiene 333 filas: tres categorías para cada uno de 111 mes
 Desde la raíz del repositorio:
 
 ```bash
-python -m pip install -r datos/residuos/requirements.txt
-python datos/residuos/analisis_residuos.py
+python -m pip install -r requirements.txt
+python -m src.infrastructure.cli.pronosticar_residuos
 ```
+
+El código sigue la estructura canónica del repositorio (`src/domain/residuos`,
+`src/application/residuos`, `src/adapters/residuos` y
+`src/infrastructure/sklearn/residuos_*.py`). Este directorio conserva solo los
+datos, su documentación y los resultados.
 
 El programa valida las columnas necesarias, registros duplicados, categorías mensuales y continuidad de la serie. Escribe en `datos/residuos/resultados/`:
 

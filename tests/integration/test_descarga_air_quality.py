@@ -5,7 +5,11 @@ from urllib.error import URLError
 
 import pytest
 
-from src.medioambiente.data import CSV_FILENAME, download_dataset, load_air_quality
+from src.adapters.medioambiente.gateways.air_quality_uci_gateway import (
+    CSV_FILENAME,
+    download_dataset,
+    load_air_quality,
+)
 
 
 def test_download_dataset_desde_uci(tmp_path: Path) -> None:
