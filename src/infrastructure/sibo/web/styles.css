@@ -327,6 +327,35 @@ output {
   padding: 0.2rem;
 }
 
+.seguimiento {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.seguimiento label {
+  color: var(--texto-suave);
+  font-size: 0.72rem;
+}
+
+.seguimiento input {
+  width: 5.5rem;
+  margin: 0;
+  padding: 0.3rem 0.4rem;
+}
+
+.boton-seguimiento {
+  border: 1px solid var(--borde);
+  border-radius: 0.5rem;
+  background: var(--verde-claro);
+  color: var(--verde);
+  cursor: pointer;
+  font-size: 0.74rem;
+  padding: 0.3rem 0.5rem;
+}
+
 .controles {
   display: flex;
   gap: 0.7rem;

@@ -118,7 +118,24 @@ function renderizarRegistros(registros) {
             <span>${formatearFecha(registro.fecha_hora)} · síntomas ${registro.sintomas}/10</span>
             <span>${fichaFodmap(registro.fodmap)}</span>
           </div>
-          <button class="boton-eliminar" data-id="${registro.id}" type="button">Eliminar</button>
+          <div class="seguimiento">
+            <label>
+              2 h
+              <input
+                class="sintomas-2h"
+                type="number"
+                min="0"
+                max="10"
+                step="1"
+                placeholder="0-10"
+                value="${registro.sintomas_2h ?? ""}"
+              />
+            </label>
+            <button class="boton-seguimiento" data-id="${registro.id}" type="button">
+              Guardar etiqueta
+            </button>
+            <button class="boton-eliminar" data-id="${registro.id}" type="button">Eliminar</button>
+          </div>
         </li>
       `,
     )
@@ -137,6 +154,27 @@ async function eliminarRegistro(id) {
     await Promise.all([cargarRegistros(), cargarCurva(), cargarRecomendaciones()]);
   } catch (error) {
     mostrarMensaje(error.message, "error");
+  }
+}
+
+async function registrarSintomas2H(registroId, campo) {
+  const texto = campo.value.trim();
+  const sintomas = Number(texto);
+  if (texto === "" || !Number.isFinite(sintomas) || sintomas < 0 || sintomas > 10) {
+    mostrarMensaje("Ingresá un valor de 0 a 10 para el seguimiento.", "error");
+    return;
+  }
+  try {
+    await pedir(`${API}/registros/${registroId}/sintomas-2h`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sintomas }),
+    });
+    await pedir(`${API}/modelo/reentrenar`, { method: "POST" });
+    mostrarMensaje("Etiqueta real guardada y modelo reentrenado.", "ok");
+    await Promise.all([cargarRegistros(), cargarCurva(), cargarRecomendaciones()]);
+  } catch (error) {
+    mostrarMensaje(`No se pudo guardar: ${error.message}`, "error");
   }
 }
 
@@ -305,6 +343,12 @@ function configurarEventos() {
   });
 
   $("#lista-registros").addEventListener("click", (evento) => {
+    const seguimiento = evento.target.closest(".boton-seguimiento");
+    if (seguimiento) {
+      const campo = seguimiento.closest("li").querySelector(".sintomas-2h");
+      registrarSintomas2H(seguimiento.dataset.id, campo);
+      return;
+    }
     const boton = evento.target.closest(".boton-eliminar");
     if (boton) {
       eliminarRegistro(boton.dataset.id);
