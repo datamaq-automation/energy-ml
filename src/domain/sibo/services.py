@@ -1,14 +1,15 @@
-"""src/domain/sibo/servicios.py — Reglas de puntaje, recomendación y curva de absorción."""
+"""src/domain/sibo/services.py — Reglas de puntaje, recomendación y curva de absorción."""
 
 from __future__ import annotations
 
 import math
 
 from src.domain.sibo.entities import Alimento
-
-FODMAP_VALOR = {"bajo": 0.1, "medio": 0.5, "alto": 0.9}
-VENTANA_DIGESTION_HORAS = 8.0
-HORA_PICO_HORAS = 2.0
+from src.domain.sibo.value_objects import (
+    FODMAP_VALOR,
+    HORA_PICO_HORAS,
+    VENTANA_DIGESTION_HORAS,
+)
 
 
 def factor_fodmap(fodmap: str) -> float:

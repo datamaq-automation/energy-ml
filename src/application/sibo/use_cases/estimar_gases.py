@@ -7,8 +7,9 @@ from datetime import date, datetime, time, timedelta
 
 from src.application.sibo.dtos import SerieGases
 from src.domain.sibo.entities import PrediccionPico, PuntoGases, RegistroComida
-from src.domain.sibo.ports import AlimentoRepository, PredictorGases, RegistroRepository
-from src.domain.sibo.servicios import VENTANA_DIGESTION_HORAS, curva_absorcion
+from src.domain.sibo.repositories import AlimentoRepository, PredictorGases, RegistroRepository
+from src.domain.sibo.services import curva_absorcion
+from src.domain.sibo.value_objects import VENTANA_DIGESTION_HORAS
 
 NIVEL_BASE = 5.0
 FACTOR_CONTRIBUCION = 0.9

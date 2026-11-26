@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.adapters.sibo.controllers.controladores import salud
 from src.adapters.sibo.presenters.respuestas import SaludResponse
-from src.application.sibo.politica_modelo import PoliticaModelo
+from src.domain.sibo.value_objects import PoliticaModelo
 from src.infrastructure.sibo.database import BaseDatos
 from src.infrastructure.sibo.fastapi.routers.alimentos import router as alimentos_router
 from src.infrastructure.sibo.fastapi.routers.gases import router as gases_router

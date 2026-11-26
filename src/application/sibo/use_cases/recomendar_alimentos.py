@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from src.domain.sibo.entities import Alimento, Recomendacion
-from src.domain.sibo.ports import AlimentoRepository, RegistroRepository
-from src.domain.sibo.servicios import factor_fodmap, motivo_recomendacion
+from src.domain.sibo.repositories import AlimentoRepository, RegistroRepository
+from src.domain.sibo.services import factor_fodmap, motivo_recomendacion
 
 
 class RecomendarAlimentosUseCase:

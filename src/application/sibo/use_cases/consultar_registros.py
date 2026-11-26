@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from src.application.sibo.dtos import RegistroDetallado
-from src.domain.sibo.ports import AlimentoRepository, RegistroRepository
+from src.domain.sibo.events import RegistroEliminado
+from src.domain.sibo.exceptions import RegistroNoEncontradoError
+from src.domain.sibo.repositories import AlimentoRepository, RegistroRepository
 
 
 class ConsultarRegistrosUseCase:
@@ -41,6 +43,7 @@ class EliminarRegistroUseCase:
     def __init__(self, registros: RegistroRepository) -> None:
         self._registros = registros
 
-    def execute(self, registro_id: int) -> None:
+    def execute(self, registro_id: int) -> RegistroEliminado:
         if not self._registros.eliminar(registro_id):
-            raise LookupError(f"No existe el registro {registro_id}")
+            raise RegistroNoEncontradoError(registro_id)
+        return RegistroEliminado(registro_id=registro_id)

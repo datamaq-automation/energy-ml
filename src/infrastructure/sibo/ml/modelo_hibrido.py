@@ -13,9 +13,9 @@ import math
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
-from src.application.sibo.politica_modelo import PoliticaModelo
 from src.domain.sibo.entities import Alimento, PrediccionPico
-from src.domain.sibo.servicios import factor_fodmap, factor_porcion, puntaje_heuristico
+from src.domain.sibo.services import factor_fodmap, factor_porcion, puntaje_heuristico
+from src.domain.sibo.value_objects import PoliticaModelo
 
 MUESTRAS_ENTRENAMIENTO = 1500
 RUIDO_ENTRENAMIENTO = 3.0

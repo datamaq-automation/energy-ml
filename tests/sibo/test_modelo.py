@@ -6,9 +6,9 @@ from dataclasses import replace
 
 import pytest
 
-from src.application.sibo.politica_modelo import PoliticaModelo
 from src.domain.sibo.entities import Alimento, PrediccionPico
-from src.domain.sibo.servicios import puntaje_heuristico
+from src.domain.sibo.services import puntaje_heuristico
+from src.domain.sibo.value_objects import PoliticaModelo
 from src.infrastructure.sibo.ml.modelo_hibrido import ModeloGasesHibrido
 
 

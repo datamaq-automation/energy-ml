@@ -1,16 +1,21 @@
-"""src/application/sibo/politica_modelo.py — Política configurable del modelo híbrido."""
+"""src/domain/sibo/value_objects.py — Política de modelado y constantes nutricionales del dominio."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+FODMAP_VALOR: dict[str, float] = {"bajo": 0.1, "medio": 0.5, "alto": 0.9}
+VENTANA_DIGESTION_HORAS: float = 8.0
+HORA_PICO_HORAS: float = 2.0
+
 
 @dataclass(frozen=True)
 class PoliticaModelo:
-    """Decisión de modelado: mezcla modelo/heurística y percentiles de la banda.
+    """Mezcla modelo/heurística y percentiles de la banda de gases.
 
-    Los valores por defecto son un punto de partida explícito, no una elección
-    validada con datos reales. Cambiarlos no requiere tocar la infraestructura.
+    Son reglas del problema, no detalles de sklearn: la infraestructura las recibe.
+    Los valores por defecto son un punto de partida, no una decisión validada con
+    datos reales, y pueden ajustarse sin tocar el modelo.
     """
 
     peso_modelo: float = 0.7

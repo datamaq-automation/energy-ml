@@ -18,7 +18,7 @@ from src.application.sibo.use_cases.estimar_gases import EstimarGasesUseCase
 from src.application.sibo.use_cases.listar_alimentos import ListarAlimentosUseCase
 from src.application.sibo.use_cases.recomendar_alimentos import RecomendarAlimentosUseCase
 from src.application.sibo.use_cases.registrar_comida import RegistrarComidaUseCase
-from src.domain.sibo.ports import AlimentoRepository, PredictorGases, RegistroRepository
+from src.domain.sibo.repositories import AlimentoRepository, PredictorGases, RegistroRepository
 from src.infrastructure.sibo.database import BaseDatos
 
 

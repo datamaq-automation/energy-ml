@@ -83,7 +83,7 @@ Documentación interactiva: `http://localhost:8001/docs`.
    alimentos en una persona.
 3. El `RandomForest` aprende interacciones no lineales sobre esas etiquetas simuladas.
 4. La predicción final combina modelo y heurística según `PoliticaModelo`
-   (`src/application/sibo/politica_modelo.py`). Los valores por defecto son 70/30; son
+   (`src/domain/sibo/value_objects.py`). Los valores por defecto son 70/30; son
    una decisión de diseño explícita, no un resultado validado con datos reales.
 5. La banda se calcula con los percentiles 10 y 90 de las predicciones de los 120 árboles
    del ensamble. No se usan márgenes fijos.

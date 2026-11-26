@@ -1,4 +1,4 @@
-"""src/domain/sibo/ports.py — Puertos del dominio SIBO que implementa la infraestructura."""
+"""src/domain/sibo/repositories.py — Puertos del dominio SIBO que implementa la infraestructura."""
 
 from __future__ import annotations
 

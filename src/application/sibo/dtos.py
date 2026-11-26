@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from src.domain.sibo.entities import Alimento, PuntoGases, RegistroComida
+from src.domain.sibo.events import ComidaRegistrada
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class RegistroDetallado:
 
     registro: RegistroComida
     alimento: Alimento
+    evento: ComidaRegistrada | None = None
 
 
 @dataclass(frozen=True)

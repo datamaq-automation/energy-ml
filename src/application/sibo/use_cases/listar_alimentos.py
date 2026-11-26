@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from src.domain.sibo.entities import Alimento
-from src.domain.sibo.ports import AlimentoRepository
+from src.domain.sibo.repositories import AlimentoRepository
 
 
 class ListarAlimentosUseCase:
