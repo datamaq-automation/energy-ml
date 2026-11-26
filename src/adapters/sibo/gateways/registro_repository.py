@@ -1,4 +1,4 @@
-"""src/adapters/gateways/sibo/registro_repository.py — Adaptador SQLite de registros."""
+"""src/adapters/sibo/gateways/registro_repository.py — Adaptador SQLite de registros."""
 
 from __future__ import annotations
 

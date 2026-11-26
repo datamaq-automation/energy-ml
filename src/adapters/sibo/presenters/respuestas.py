@@ -1,4 +1,4 @@
-"""src/adapters/presenters/sibo/respuestas.py — Esquemas HTTP y mapeo desde el dominio."""
+"""src/adapters/sibo/presenters/respuestas.py — Esquemas HTTP y mapeo desde el dominio."""
 
 from __future__ import annotations
 

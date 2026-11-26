@@ -6,8 +6,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from src.adapters.controllers.sibo.controladores import listar_alimentos as listar_alimentos_http
-from src.adapters.presenters.sibo.respuestas import AlimentoResponse
+from src.adapters.sibo.controllers.controladores import listar_alimentos as listar_alimentos_http
+from src.adapters.sibo.presenters.respuestas import AlimentoResponse
 from src.application.sibo.use_cases.listar_alimentos import ListarAlimentosUseCase
 from src.infrastructure.sibo.fastapi.dependencies import get_listar_alimentos
 

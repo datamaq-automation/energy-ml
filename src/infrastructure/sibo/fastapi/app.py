@@ -8,8 +8,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.adapters.controllers.sibo.controladores import salud
-from src.adapters.presenters.sibo.respuestas import SaludResponse
+from src.adapters.sibo.controllers.controladores import salud
+from src.adapters.sibo.presenters.respuestas import SaludResponse
 from src.application.sibo.politica_modelo import PoliticaModelo
 from src.infrastructure.sibo.database import BaseDatos
 from src.infrastructure.sibo.fastapi.routers.alimentos import router as alimentos_router

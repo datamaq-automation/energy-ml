@@ -1,11 +1,11 @@
-"""src/adapters/controllers/sibo/controladores.py — Orquestación HTTP sin FastAPI."""
+"""src/adapters/sibo/controllers/controladores.py — Orquestación HTTP sin FastAPI."""
 
 from __future__ import annotations
 
 from datetime import date, datetime
 
-from src.adapters.controllers.sibo.esquemas import RegistroCreateRequest
-from src.adapters.presenters.sibo.respuestas import (
+from src.adapters.sibo.controllers.esquemas import RegistroCreateRequest
+from src.adapters.sibo.presenters.respuestas import (
     AlimentoResponse,
     RecomendacionResponse,
     RegistroResponse,

@@ -7,17 +7,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from src.adapters.controllers.sibo.controladores import (
+from src.adapters.sibo.controllers.controladores import (
     eliminar_registro as eliminar_registro_http,
 )
-from src.adapters.controllers.sibo.controladores import (
+from src.adapters.sibo.controllers.controladores import (
     listar_registros as listar_registros_http,
 )
-from src.adapters.controllers.sibo.controladores import (
+from src.adapters.sibo.controllers.controladores import (
     registrar_comida as registrar_comida_http,
 )
-from src.adapters.controllers.sibo.esquemas import RegistroCreateRequest
-from src.adapters.presenters.sibo.respuestas import RegistroResponse
+from src.adapters.sibo.controllers.esquemas import RegistroCreateRequest
+from src.adapters.sibo.presenters.respuestas import RegistroResponse
 from src.application.sibo.use_cases.consultar_registros import (
     ConsultarRegistrosUseCase,
     EliminarRegistroUseCase,

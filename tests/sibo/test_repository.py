@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from src.adapters.gateways.sibo.alimento_repository import SqliteAlimentoRepository
-from src.adapters.gateways.sibo.registro_repository import SqliteRegistroRepository
+from src.adapters.sibo.gateways.alimento_repository import SqliteAlimentoRepository
+from src.adapters.sibo.gateways.registro_repository import SqliteRegistroRepository
 from src.domain.sibo.entities import RegistroComida
 from src.infrastructure.sibo.database import BaseDatos
 from src.infrastructure.sibo.seed import sembrar_si_vacio

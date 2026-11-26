@@ -7,8 +7,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from src.adapters.controllers.sibo.controladores import estimar_gases as estimar_gases_http
-from src.adapters.presenters.sibo.respuestas import SerieGasesResponse
+from src.adapters.sibo.controllers.controladores import estimar_gases as estimar_gases_http
+from src.adapters.sibo.presenters.respuestas import SerieGasesResponse
 from src.application.sibo.use_cases.estimar_gases import EstimarGasesUseCase
 from src.infrastructure.sibo.fastapi.dependencies import get_estimar_gases
 

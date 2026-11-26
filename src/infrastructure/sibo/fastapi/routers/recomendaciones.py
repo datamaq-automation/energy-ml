@@ -6,10 +6,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from src.adapters.controllers.sibo.controladores import (
+from src.adapters.sibo.controllers.controladores import (
     recomendar_alimentos as recomendar_alimentos_http,
 )
-from src.adapters.presenters.sibo.respuestas import RecomendacionResponse
+from src.adapters.sibo.presenters.respuestas import RecomendacionResponse
 from src.application.sibo.use_cases.recomendar_alimentos import RecomendarAlimentosUseCase
 from src.infrastructure.sibo.fastapi.dependencies import get_recomendar_alimentos
 

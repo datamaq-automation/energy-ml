@@ -1,4 +1,4 @@
-"""src/adapters/gateways/sibo/alimento_repository.py — Adaptador SQLite de alimentos."""
+"""src/adapters/sibo/gateways/alimento_repository.py — Adaptador SQLite de alimentos."""
 
 from __future__ import annotations
 

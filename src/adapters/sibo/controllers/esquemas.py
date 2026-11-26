@@ -1,4 +1,4 @@
-"""src/adapters/controllers/sibo/esquemas.py — Esquemas de entrada HTTP del módulo SIBO."""
+"""src/adapters/sibo/controllers/esquemas.py — Esquemas de entrada HTTP del módulo SIBO."""
 
 from __future__ import annotations
 
