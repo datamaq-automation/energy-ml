@@ -6,14 +6,17 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from src.adapters.bicis.repositorio_recorridos import RepositorioRecorridosBicis
+from src.adapters.bicis.controllers.pronosticos_controller import PronosticosController
+from src.adapters.bicis.gateways.repositorio_recorridos_gateway import (
+    RepositorioRecorridosBicis,
+)
+from src.adapters.bicis.presenters.pronosticos_presenter import PronosticosPresenter
+from src.application.bicis.dtos.evaluar_pronosticos_response import EvaluarPronosticosResponse
+from src.application.bicis.use_cases.evaluar_pronosticos import EvaluarPronosticosUseCase
 from src.application.bicis.use_cases.preparar_pronosticos import PrepararPronosticosUseCase
 from src.infrastructure.bicis.descargar_datasets import DIRECTORIO_DATOS, descargar_datasets
-from src.infrastructure.bicis.evaluar_pronosticos import (
-    ResultadoEvaluacionPronosticos,
-    evaluar_2024_2025,
-)
 from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.bicis_modelador import BosqueAleatorioPronosticos
 
 DESDE: date = date(2024, 1, 1)
 HASTA: date = date(2025, 12, 31)
@@ -32,11 +35,14 @@ def leer_argumentos() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def ejecutar(directorio_datos: Path = DIRECTORIO_DATOS) -> ResultadoEvaluacionPronosticos:
-    """Descarga si hace falta, prepara muestras y muestra métricas sin escribir resultados."""
+def ejecutar(directorio_datos: Path = DIRECTORIO_DATOS) -> EvaluarPronosticosResponse:
+    """Compone las capas, ejecuta el controller e informa el reporte."""
     archivos = descargar_datasets(directorio_datos)
     repositorio = RepositorioRecorridosBicis(archivos)
-    preparacion = PrepararPronosticosUseCase(repositorio).execute(DESDE, HASTA)
+    preparador = PrepararPronosticosUseCase(repositorio)
+    caso_de_uso = EvaluarPronosticosUseCase(preparador, BosqueAleatorioPronosticos())
+    controller = PronosticosController(caso_de_uso, PronosticosPresenter())
+    respuesta, lineas = controller.evaluar(DESDE, HASTA)
     calidad = repositorio.calidad
     logger.info(
         "Control de recorridos: %d filas, %d duplicados descartados (%d conflictivos), "
@@ -48,41 +54,20 @@ def ejecutar(directorio_datos: Path = DIRECTORIO_DATOS) -> ResultadoEvaluacionPr
         calidad.fechas_invalidas,
         calidad.filas_malformadas,
     )
-    _informar_cobertura(preparacion.dias_faltantes, preparacion.dias_sin_rezagos)
-    resultado = evaluar_2024_2025(preparacion.muestras)
-    _informar_metricas(resultado)
-    return resultado
+    for linea in lineas:
+        logger.info(linea)
+    _informar_fechas_faltantes(respuesta.dias_faltantes)
+    return respuesta
 
 
-def _informar_cobertura(faltantes: tuple[date, ...], sin_rezagos: tuple[date, ...]) -> None:
+def _informar_fechas_faltantes(fechas: tuple[date, ...]) -> None:
     for anio in (2024, 2025):
-        faltan = tuple(fecha for fecha in faltantes if fecha.year == anio)
-        sin_historia = tuple(fecha for fecha in sin_rezagos if fecha.year == anio)
-        logger.info(
-            "%d: %d días sin registros, %d días observados sin rezagos completos",
-            anio,
-            len(faltan),
-            len(sin_historia),
-        )
-        if faltan:
-            logger.warning("Fechas sin registros en %d: %s", anio, _listar_fechas(faltan))
-
-
-def _listar_fechas(fechas: tuple[date, ...]) -> str:
-    mostradas = ", ".join(fecha.isoformat() for fecha in fechas[:10])
-    restantes = len(fechas) - min(len(fechas), 10)
-    return mostradas if restantes == 0 else f"{mostradas} y {restantes} más"
-
-
-def _informar_metricas(resultado: ResultadoEvaluacionPronosticos) -> None:
-    logger.info(
-        "Muestras: %d días de entrenamiento (2024), %d de prueba (2025)",
-        resultado.dias_entrenamiento,
-        resultado.dias_prueba,
-    )
-    logger.info("%-34s %12s %12s", "Método", "MAE (viajes)", "RMSE (viajes)")
-    for metrica in (resultado.linea_base, resultado.bosque_aleatorio):
-        logger.info("%-34s %12.2f %12.2f", metrica.nombre, metrica.mae, metrica.rmse)
+        faltantes = tuple(fecha for fecha in fechas if fecha.year == anio)
+        if faltantes:
+            mostradas = ", ".join(fecha.isoformat() for fecha in faltantes[:10])
+            restantes = len(faltantes) - min(len(faltantes), 10)
+            sufijo = f" y {restantes} más" if restantes else ""
+            logger.warning("Fechas sin registros en %d: %s%s", anio, mostradas, sufijo)
 
 
 def main() -> None:

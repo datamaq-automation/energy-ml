@@ -1,4 +1,4 @@
-"""src/adapters/bicis/repositorio_recorridos.py — Adaptador de ZIP oficiales a totales diarios."""
+"""src/adapters/bicis/gateways/repositorio_recorridos_gateway.py — ZIP oficiales a totales diarios."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
-from src.domain.bicis.modelos import DiaViajes, SerieDiariaViajes
+from src.domain.bicis.value_objects import DiaViajes, SerieDiariaViajes
 
 ANIOS_DISPONIBLES: tuple[int, ...] = (2024, 2025)
 

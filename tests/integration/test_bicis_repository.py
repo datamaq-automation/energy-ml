@@ -8,7 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from src.adapters.bicis.repositorio_recorridos import RepositorioRecorridosBicis
+from src.adapters.bicis.gateways.repositorio_recorridos_gateway import (
+    RepositorioRecorridosBicis,
+)
 
 
 def crear_zip(ruta: Path, nombre_csv: str, filas: list[tuple[str, str]]) -> Path:

@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 
 from src.application.bicis.use_cases.preparar_pronosticos import PrepararPronosticosUseCase
-from src.domain.bicis.modelos import DiaViajes, SerieDiariaViajes
+from src.domain.bicis.value_objects import DiaViajes, SerieDiariaViajes
 
 
 class RepositorioEnMemoria:

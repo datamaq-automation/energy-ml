@@ -4,9 +4,8 @@ from datetime import date, timedelta
 
 import pytest
 
-from src.application.bicis.dtos.pronostico import MuestraPronostico
-from src.domain.bicis.modelos import VariablesPronostico
-from src.infrastructure.bicis.evaluar_pronosticos import evaluar_2024_2025
+from src.domain.bicis.value_objects import MuestraPronostico, VariablesPronostico
+from src.infrastructure.sklearn.bicis_modelador import evaluar_2024_2025
 
 
 def crear_muestra(fecha: date, viajes: int) -> MuestraPronostico:

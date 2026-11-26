@@ -4,11 +4,11 @@ from datetime import date
 
 import pytest
 
-from src.domain.bicis.modelos import DiaViajes, SerieDiariaViajes
-from src.domain.bicis.reglas import (
+from src.domain.bicis.services import (
     construir_variables_pronostico,
     viajes_mismo_dia_semana_anterior,
 )
+from src.domain.bicis.value_objects import DiaViajes, SerieDiariaViajes
 
 
 def crear_serie(*dias: tuple[date, int]) -> SerieDiariaViajes:

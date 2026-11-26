@@ -1,4 +1,4 @@
-"""src/domain/bicis/modelos.py — Tipos inmutables para la serie diaria de viajes."""
+"""src/domain/bicis/value_objects.py — Valores inmutables de la serie y evaluación diaria."""
 
 from __future__ import annotations
 
@@ -57,3 +57,40 @@ class VariablesPronostico:
     mes: int
     viajes_dia_anterior: int
     viajes_semana_anterior: int
+
+
+@dataclass(frozen=True)
+class MuestraPronostico:
+    """Un día con sus entradas disponibles antes del pronóstico y su valor observado."""
+
+    fecha_objetivo: date
+    variables: VariablesPronostico
+    viajes_reales: int
+
+
+@dataclass(frozen=True)
+class ResultadoPreparacionPronosticos:
+    """Muestras utilizables y fechas que se excluyeron por datos o rezagos ausentes."""
+
+    muestras: tuple[MuestraPronostico, ...]
+    dias_faltantes: tuple[date, ...]
+    dias_sin_rezagos: tuple[date, ...]
+
+
+@dataclass(frozen=True)
+class MetricasPronostico:
+    """Error de un pronosticador medido en viajes diarios."""
+
+    nombre: str
+    mae: float
+    rmse: float
+
+
+@dataclass(frozen=True)
+class ResultadoEvaluacionPronosticos:
+    """Métricas comparables y tamaños de las particiones cronológicas."""
+
+    linea_base: MetricasPronostico
+    bosque_aleatorio: MetricasPronostico
+    dias_entrenamiento: int
+    dias_prueba: int
