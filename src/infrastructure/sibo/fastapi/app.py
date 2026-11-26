@@ -16,6 +16,7 @@ from src.infrastructure.sibo.fastapi.routers.alimentos import router as alimento
 from src.infrastructure.sibo.fastapi.routers.gases import router as gases_router
 from src.infrastructure.sibo.fastapi.routers.recomendaciones import router as recomendaciones_router
 from src.infrastructure.sibo.fastapi.routers.registros import router as registros_router
+from src.infrastructure.sibo.ml.entrenamiento import cargar_muestras
 from src.infrastructure.sibo.ml.modelo_hibrido import ModeloGasesHibrido
 from src.infrastructure.sibo.seed import sembrar_si_vacio
 
@@ -24,6 +25,16 @@ DIRECTORIO_WEB = RAIZ / "web"
 RUTA_SEMILLA = RAIZ / "data" / "alimentos.csv"
 RUTA_DB = RAIZ / "data" / "sibo.db"
 PREFIJO_API = "/api/sibo"
+
+
+def construir_predictor(
+    base_datos: BaseDatos,
+    politica: PoliticaModelo,
+) -> ModeloGasesHibrido:
+    """Reentrena el predictor con las etiquetas reales presentes en la base."""
+    with base_datos.conexion() as conexion:
+        muestras = cargar_muestras(conexion)
+    return ModeloGasesHibrido(politica=politica, muestras=muestras)
 
 
 def create_app(ruta_db: str | Path | None = None) -> FastAPI:
@@ -40,7 +51,7 @@ def create_app(ruta_db: str | Path | None = None) -> FastAPI:
         ),
     )
     app.state.base_datos = base_datos
-    app.state.predictor = ModeloGasesHibrido(politica=PoliticaModelo())
+    app.state.predictor = construir_predictor(base_datos, PoliticaModelo())
 
     for router in (
         alimentos_router,
@@ -53,6 +64,17 @@ def create_app(ruta_db: str | Path | None = None) -> FastAPI:
     @app.get(f"{PREFIJO_API}/salud", response_model=SaludResponse, tags=["Salud"])
     def estado() -> SaludResponse:
         return salud()
+
+    @app.get(f"{PREFIJO_API}/modelo", tags=["Modelo"])
+    def estado_modelo(request: Request) -> dict[str, bool | float | int | None]:
+        predictor: ModeloGasesHibrido = request.app.state.predictor
+        return predictor.estado()
+
+    @app.post(f"{PREFIJO_API}/modelo/reentrenar", tags=["Modelo"])
+    def reentrenar(request: Request) -> dict[str, bool | float | int | None]:
+        predictor = construir_predictor(base_datos, PoliticaModelo())
+        request.app.state.predictor = predictor
+        return predictor.estado()
 
     app.mount("/static", StaticFiles(directory=str(DIRECTORIO_WEB)), name="static")
 

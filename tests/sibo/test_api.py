@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -55,6 +56,52 @@ def test_flujo_de_registro_y_eliminacion(cliente: TestClient) -> None:
     eliminado = cliente.delete(f"/api/sibo/registros/{creado['id']}")
     assert eliminado.status_code == 204
     assert cliente.get("/api/sibo/registros").json() == []
+
+
+def test_seguimiento_real_actualiza_registro_y_estado_del_modelo(cliente: TestClient) -> None:
+    creado = _registrar(cliente)
+    registro_id = int(creado["id"])
+    fecha = datetime.fromisoformat(str(creado["fecha_hora"])) + timedelta(hours=2)
+
+    respuesta = cliente.patch(
+        f"/api/sibo/registros/{registro_id}/sintomas-2h",
+        json={"sintomas": 8, "fecha": fecha.isoformat()},
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.json()["sintomas"] == 8
+    assert respuesta.json()["registro_id"] == registro_id
+
+    registrado = cliente.get("/api/sibo/registros").json()[0]
+    assert registrado["sintomas_2h"] == 8
+    assert registrado["fecha_sintomas_2h"] == fecha.isoformat()
+
+    estado = cliente.get("/api/sibo/modelo")
+    assert estado.status_code == 200
+    assert estado.json()["muestras_reales"] == 0
+    assert estado.json()["modelo_activo"] is False
+
+    reentrenado = cliente.post("/api/sibo/modelo/reentrenar")
+    assert reentrenado.status_code == 200
+    assert reentrenado.json()["muestras_reales"] == 1
+
+
+def test_seguimiento_fuera_de_ventana_devuelve_422(cliente: TestClient) -> None:
+    creado = _registrar(cliente)
+    fecha = datetime.fromisoformat(str(creado["fecha_hora"])) + timedelta(minutes=30)
+    respuesta = cliente.patch(
+        f"/api/sibo/registros/{creado['id']}/sintomas-2h",
+        json={"sintomas": 6, "fecha": fecha.isoformat()},
+    )
+    assert respuesta.status_code == 422
+    assert "1,5 y 4" in respuesta.json()["detail"]
+
+
+def test_seguimiento_de_registro_inexistente_devuelve_404(cliente: TestClient) -> None:
+    respuesta = cliente.patch(
+        "/api/sibo/registros/9999/sintomas-2h",
+        json={"sintomas": 6},
+    )
+    assert respuesta.status_code == 404
 
 
 def test_registro_con_alimento_inexistente_devuelve_404(cliente: TestClient) -> None:
