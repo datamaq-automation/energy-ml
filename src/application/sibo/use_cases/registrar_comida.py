@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from src.application.sibo.dtos import RegistrarComidaCommand, RegistroDetallado
+from src.application.sibo.dtos.registrar_comida import (
+    RegistrarComidaRequest,
+    RegistrarComidaResponse,
+)
+from src.application.sibo.mappers.sibo_mapper import SiboMapper
 from src.domain.sibo.entities import RegistroComida
 from src.domain.sibo.events import ComidaRegistrada
 from src.domain.sibo.exceptions import AlimentoNoEncontradoError
@@ -22,17 +26,18 @@ class RegistrarComidaUseCase:
         self._alimentos = alimentos
         self._registros = registros
 
-    def execute(self, command: RegistrarComidaCommand) -> RegistroDetallado:
-        alimento = self._alimentos.obtener(command.alimento_id)
+    def execute(self, request: RegistrarComidaRequest) -> RegistrarComidaResponse:
+        """Guarda la comida y devuelve la respuesta con el evento de dominio emitido."""
+        alimento = self._alimentos.obtener(request.alimento_id)
         if alimento is None:
-            raise AlimentoNoEncontradoError(command.alimento_id)
+            raise AlimentoNoEncontradoError(request.alimento_id)
 
         registro = RegistroComida(
-            fecha_hora=command.fecha_hora or datetime.now(),
-            alimento_id=command.alimento_id,
-            porcion_g=command.porcion_g,
-            sintomas=command.sintomas,
-            notas=command.notas.strip(),
+            fecha_hora=request.fecha_hora or datetime.now(),
+            alimento_id=request.alimento_id,
+            porcion_g=request.porcion_g,
+            sintomas=request.sintomas,
+            notas=request.notas.strip(),
         )
         creado = self._registros.crear(registro)
         evento = ComidaRegistrada(
@@ -41,4 +46,4 @@ class RegistrarComidaUseCase:
             fecha_hora=creado.fecha_hora,
             porcion_g=creado.porcion_g,
         )
-        return RegistroDetallado(registro=creado, alimento=alimento, evento=evento)
+        return SiboMapper.registro_a_response(creado, alimento, evento)

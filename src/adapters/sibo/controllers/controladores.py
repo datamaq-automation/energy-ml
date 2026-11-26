@@ -12,7 +12,12 @@ from src.adapters.sibo.presenters.respuestas import (
     SaludResponse,
     SerieGasesResponse,
 )
-from src.application.sibo.dtos import RegistrarComidaCommand
+from src.application.sibo.dtos.consultar_registros import ConsultarRegistrosRequest
+from src.application.sibo.dtos.eliminar_registro import EliminarRegistroRequest
+from src.application.sibo.dtos.estimar_gases import EstimarGasesRequest
+from src.application.sibo.dtos.listar_alimentos import ListarAlimentosRequest
+from src.application.sibo.dtos.recomendar_alimentos import RecomendarAlimentosRequest
+from src.application.sibo.dtos.registrar_comida import RegistrarComidaRequest
 from src.application.sibo.use_cases.consultar_registros import (
     ConsultarRegistrosUseCase,
     EliminarRegistroUseCase,
@@ -29,21 +34,16 @@ def listar_alimentos(
     caso: ListarAlimentosUseCase,
     busqueda: str | None,
 ) -> list[AlimentoResponse]:
-    return [AlimentoResponse.desde(alimento) for alimento in caso.execute(busqueda)]
+    respuesta = caso.execute(ListarAlimentosRequest(busqueda=busqueda))
+    return [AlimentoResponse(**alimento.model_dump()) for alimento in respuesta.alimentos]
 
 
 def registrar_comida(
     caso: RegistrarComidaUseCase,
     request: RegistroCreateRequest,
 ) -> RegistroResponse:
-    command = RegistrarComidaCommand(
-        alimento_id=request.alimento_id,
-        porcion_g=request.porcion_g,
-        fecha_hora=request.fecha_hora,
-        sintomas=request.sintomas,
-        notas=request.notas,
-    )
-    return RegistroResponse.desde(caso.execute(command))
+    peticion = RegistrarComidaRequest(**request.model_dump())
+    return RegistroResponse(**caso.execute(peticion).model_dump())
 
 
 def listar_registros(
@@ -51,11 +51,12 @@ def listar_registros(
     desde: datetime | None,
     hasta: datetime | None,
 ) -> list[RegistroResponse]:
-    return [RegistroResponse.desde(detalle) for detalle in caso.execute(desde, hasta)]
+    respuesta = caso.execute(ConsultarRegistrosRequest(desde=desde, hasta=hasta))
+    return [RegistroResponse(**registro.model_dump()) for registro in respuesta.registros]
 
 
 def eliminar_registro(caso: EliminarRegistroUseCase, registro_id: int) -> None:
-    caso.execute(registro_id)
+    caso.execute(EliminarRegistroRequest(registro_id=registro_id))
 
 
 def estimar_gases(
@@ -63,14 +64,16 @@ def estimar_gases(
     rango: str,
     fecha: date | None,
 ) -> SerieGasesResponse:
-    return SerieGasesResponse.desde_serie(caso.execute(rango, fecha))
+    respuesta = caso.execute(EstimarGasesRequest(rango=rango, fecha=fecha))
+    return SerieGasesResponse(**respuesta.model_dump())
 
 
 def recomendar_alimentos(
     caso: RecomendarAlimentosUseCase,
     limite: int,
 ) -> list[RecomendacionResponse]:
-    return [RecomendacionResponse.desde(item) for item in caso.execute(limite)]
+    respuesta = caso.execute(RecomendarAlimentosRequest(limite=limite))
+    return [RecomendacionResponse(**item.model_dump()) for item in respuesta.recomendaciones]
 
 
 def salud() -> SaludResponse:

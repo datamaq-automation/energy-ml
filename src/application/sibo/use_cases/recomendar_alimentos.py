@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from src.application.sibo.dtos.recomendar_alimentos import (
+    RecomendarAlimentosRequest,
+    RecomendarAlimentosResponse,
+)
+from src.application.sibo.mappers.sibo_mapper import SiboMapper
 from src.domain.sibo.entities import Alimento, Recomendacion
 from src.domain.sibo.repositories import AlimentoRepository, RegistroRepository
 from src.domain.sibo.services import factor_fodmap, motivo_recomendacion
@@ -20,13 +25,9 @@ class RecomendarAlimentosUseCase:
         self._alimentos = alimentos
         self._registros = registros
 
-    def execute(
-        self,
-        limite: int = 6,
-        ahora: datetime | None = None,
-    ) -> list[Recomendacion]:
-        momento = ahora or datetime.now()
-        recientes = self._registros.listar(momento - timedelta(days=7), momento)
+    def execute(self, request: RecomendarAlimentosRequest) -> RecomendarAlimentosResponse:
+        ahora = datetime.now()
+        recientes = self._registros.listar(ahora - timedelta(days=7), ahora)
         consumidos = {registro.alimento_id for registro in recientes}
 
         recomendaciones = [
@@ -34,7 +35,11 @@ class RecomendarAlimentosUseCase:
             for alimento in self._alimentos.listar()
         ]
         recomendaciones.sort(key=lambda r: r.puntaje, reverse=True)
-        return recomendaciones[:limite]
+        return RecomendarAlimentosResponse(
+            recomendaciones=[
+                SiboMapper.recomendacion_a_dto(item) for item in recomendaciones[: request.limite]
+            ]
+        )
 
     def _evaluar(self, alimento: Alimento, consumido: bool) -> Recomendacion:
         puntaje = (

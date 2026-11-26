@@ -5,7 +5,8 @@ from __future__ import annotations
 import calendar
 from datetime import date, datetime, time, timedelta
 
-from src.application.sibo.dtos import SerieGases
+from src.application.sibo.dtos.estimar_gases import EstimarGasesRequest, EstimarGasesResponse
+from src.application.sibo.mappers.sibo_mapper import SiboMapper
 from src.domain.sibo.entities import PrediccionPico, PuntoGases, RegistroComida
 from src.domain.sibo.repositories import AlimentoRepository, PredictorGases, RegistroRepository
 from src.domain.sibo.services import curva_absorcion
@@ -28,8 +29,8 @@ class EstimarGasesUseCase:
         self._registros = registros
         self._predictor = predictor
 
-    def execute(self, rango: str, fecha: date | None = None) -> SerieGases:
-        inicio, fin, paso = _ventana(rango, fecha or date.today())
+    def execute(self, request: EstimarGasesRequest) -> EstimarGasesResponse:
+        inicio, fin, paso = _ventana(request.rango, request.fecha or date.today())
         margen = timedelta(hours=VENTANA_DIGESTION_HORAS)
         registros = self._registros.listar(inicio - margen, fin)
         alimentos = {
@@ -52,8 +53,8 @@ class EstimarGasesUseCase:
 
         puntos = _construir_puntos(inicio, fin, paso, picos)
         niveles = [punto.nivel_estimado for punto in puntos]
-        return SerieGases(
-            rango=rango,
+        return SiboMapper.serie_a_response(
+            rango=request.rango,
             desde=inicio,
             hasta=fin,
             promedio=round(sum(niveles) / len(niveles), 1) if niveles else 0.0,

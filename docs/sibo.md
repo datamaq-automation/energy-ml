@@ -83,8 +83,10 @@ Documentación interactiva: `http://localhost:8001/docs`.
    alimentos en una persona.
 3. El `RandomForest` aprende interacciones no lineales sobre esas etiquetas simuladas.
 4. La predicción final combina modelo y heurística según `PoliticaModelo`
-   (`src/domain/sibo/value_objects.py`). Los valores por defecto son 70/30; son
-   una decisión de diseño explícita, no un resultado validado con datos reales.
+   (`src/domain/sibo/value_objects.py`). Está en el dominio porque define cómo se
+   mezclan dos señales del problema, no cómo se entrena sklearn. Los valores por
+   defecto son 70/30; son una decisión de diseño explícita, no un resultado
+   validado con datos reales.
 5. La banda se calcula con los percentiles 10 y 90 de las predicciones de los 120 árboles
    del ensamble. No se usan márgenes fijos.
 6. Sobre cada comida se aplica una curva de absorción con pico a las 2 h y ventana de 8 h
