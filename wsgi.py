@@ -105,19 +105,23 @@ def identificar_cargas():
 
 @app.route("/api/v1/docs")
 def docs_redirect():
-    return jsonify({
-        "message": "API docs no están disponibles en esta build Flask; usa los endpoints REST documentados en el repo.",
-        "endpoints": [
-            "/api/v1/identify-loads",
-            "/api/v1/mediciones/fuente",
-            "/health",
-        ],
-    })
+    return jsonify(
+        {
+            "message": "API docs no están disponibles en esta build Flask; usa los endpoints REST documentados en el repo.",
+            "endpoints": [
+                "/api/v1/identify-loads",
+                "/api/v1/mediciones/fuente",
+                "/health",
+            ],
+        }
+    )
 
 
 @app.route("/api/v1/openapi.json")
 def openapi_json():
-    return jsonify({"openapi": "3.0.0", "info": {"title": "energy-ml Flask compatibility", "version": "1.0.0"}})
+    return jsonify(
+        {"openapi": "3.0.0", "info": {"title": "energy-ml Flask compatibility", "version": "1.0.0"}}
+    )
 
 
 if __name__ == "__main__":

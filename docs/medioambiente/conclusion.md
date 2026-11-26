@@ -1,7 +1,7 @@
 # Conclusión — Anticipación de episodios de alta contaminación por CO
 
 > **Issue [#7](https://github.com/datamaq-automation/energy-ml/issues/7)** · Tareas A, B y C ·
-> Reproducir todo con: `python -m src.medioambiente`
+> Reproducir todo con: `python -m src.infrastructure.cli.analizar_medioambiente`
 
 ## Qué aviso emitir
 
@@ -83,7 +83,7 @@ cuando alguna feature supere 0,5σ de desplazamiento.
 - [x] Precisión, recall, F1 y matriz de confusión sobre "episodio"
 - [x] `ruff check` y `pytest` pasan
 
-**Entregables:** módulo con A→B→C en orden (`python -m src.medioambiente`),
+**Entregables:** módulo con A→B→C en orden (`python -m src.infrastructure.cli.analizar_medioambiente`),
 tabla de métricas (arriba), matriz del árbol sobre test temporal
 (`[[939, 167], [151, 278]]`), gráficos de codo y silueta (arriba) y esta
 conclusión.

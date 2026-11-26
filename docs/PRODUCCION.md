@@ -79,7 +79,7 @@ ssh vps "mysql --batch --skip-column-names -e 'SELECT d.name, t.recorded_at, t.t
 ## Configuración en `config.py`
 
 ```python
-MEDICIONES_SOURCE: str = Field(default="local")      # "local" o "ssh"
+MEDICIONES_SOURCE: str = Field(default="local")  # "local" o "ssh"
 MEDICIONES_CACHE_DIR: str = Field(default="data/prod-cache")
 ```
 

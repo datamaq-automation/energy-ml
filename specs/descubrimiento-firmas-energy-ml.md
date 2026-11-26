@@ -170,37 +170,29 @@ GET /api/v1/dispositivos/{id}/maquinas/inferidas
 from datetime import datetime
 from pydantic import BaseModel, Field
 
+
 class MaquinaInferidaDTO(BaseModel):
     """Una máquina individual inferida por NILM."""
+
     id: str = Field(description="ID único: carga_001, carga_002, etc.")
     nombre: str | None = Field(
-        default=None,
-        description="Nombre legible (ej: 'Bomba A'). Si None, usar 'Carga sin nombre'"
+        default=None, description="Nombre legible (ej: 'Bomba A'). Si None, usar 'Carga sin nombre'"
     )
     potencia_tipica_kw: float = Field(description="Potencia típica en kW")
-    confianza: str = Field(
-        description="'alta', 'media' o 'baja'",
-        pattern="^(alta|media|baja)$"
-    )
+    confianza: str = Field(description="'alta', 'media' o 'baja'", pattern="^(alta|media|baja)$")
     encendidos: int = Field(description="Total de encendidos detectados")
     apagados: int = Field(description="Total de apagados detectados")
     ciclos_por_dia: float | None = Field(
-        default=None,
-        description="Promedio ciclos/día. None si rango < 1 día"
+        default=None, description="Promedio ciclos/día. None si rango < 1 día"
     )
-    dispersion_kw: float = Field(
-        description="Desvío estándar de |ΔP|, en kW"
-    )
-    timestamp_analisis: datetime = Field(
-        description="Cuándo se ejecutó el análisis NILM"
-    )
-    fuente: str = Field(
-        default="NILM-DBSCAN",
-        description="Algoritmo que lo detectó"
-    )
+    dispersion_kw: float = Field(description="Desvío estándar de |ΔP|, en kW")
+    timestamp_analisis: datetime = Field(description="Cuándo se ejecutó el análisis NILM")
+    fuente: str = Field(default="NILM-DBSCAN", description="Algoritmo que lo detectó")
+
 
 class ListaMaquinasInferidaDTO(BaseModel):
     """Conjunto de máquinas inferidas para un dispositivo."""
+
     dispositivo_id: str
     maquinas_inferidas: list[MaquinaInferidaDTO]
     actualizado_en: datetime
@@ -218,10 +210,11 @@ class ListaMaquinasInferidaDTO(BaseModel):
 ```python
 from src.application.cargas.dtos.maquinas_inferidas import ListaMaquinasInferidaDTO
 
+
 class ConsultarMaquinasInferidaUseCase:
     def __init__(self, cache_repo: RepositorioCacheMaquinas):
         self.cache_repo = cache_repo
-    
+
     def ejecutar(self, dispositivo_id: str) -> ListaMaquinasInferidaDTO:
         """
         Retorna máquinas inferidas desde cache.
@@ -244,10 +237,10 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/api/v1/dispositivos", tags=["maquinas"])
 
+
 @router.get("/{id}/maquinas/inferidas")
 async def obtener_maquinas_inferidas(
-    id: str,
-    use_case: ConsultarMaquinasInferidaUseCase = Depends(...)
+    id: str, use_case: ConsultarMaquinasInferidaUseCase = Depends(...)
 ) -> ListaMaquinasInferidaDTO:
     """Obtiene máquinas inferidas por NILM para un dispositivo."""
     return use_case.ejecutar(id)
@@ -264,12 +257,13 @@ async def obtener_maquinas_inferidas(
 ```python
 from functools import lru_cache
 
+
 class RepositorioCacheMaquinas:
     @lru_cache(maxsize=128)
     def obtener(self, dispositivo_id: str) -> ListaMaquinasInferidaDTO:
         """LRU cache con TTL implícito (actualizaciones cron 3:30 AM)."""
         pass
-    
+
     def actualizar(self, dispositivo_id: str, datos: ListaMaquinasInferidaDTO):
         """Llamado por cron job cada 3:30 AM UTC."""
         pass

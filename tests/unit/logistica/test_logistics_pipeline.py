@@ -8,17 +8,19 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.domain.logistica.models import (
+from src.adapters.logistica.gateways.pedidos_csv_gateway import load_and_prepare_orders
+from src.domain.logistica.services import (
+    describe_cluster_business_profile,
+    validate_no_data_leakage,
+)
+from src.domain.logistica.value_objects import (
     CATEGORICAL_FEATURES,
     FORBIDDEN_COLUMNS,
     KMEANS_FEATURES,
     NUMERIC_FEATURES,
-    describe_cluster_business_profile,
-    validate_no_data_leakage,
 )
 from src.infrastructure.cli.analizar_logistica import main as cli_main
 from src.infrastructure.sklearn.logistics_pipeline import (
-    load_and_prepare_orders,
     run_task_a_clustering,
     run_task_b_supervised,
     run_task_c_error_analysis,
@@ -174,3 +176,5 @@ def test_task_b_and_c_supervised_and_error_analysis(
         ],
     )
     cli_main()
+    assert (tmp_path / "logistica_elbow_silhouette.png").stat().st_size > 0
+    assert (tmp_path / "logistica_confusion_matrix.png").stat().st_size > 0

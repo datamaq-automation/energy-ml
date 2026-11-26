@@ -4,15 +4,18 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.medioambiente.data import CSV_FILENAME, DEFAULT_DATA_DIR, load_air_quality
-from src.medioambiente.preprocess import (
-    COLUMNAS_FEATURES,
-    COLUMNAS_PROHIBIDAS,
+from src.adapters.medioambiente.gateways.air_quality_uci_gateway import (
+    CSV_FILENAME,
+    DEFAULT_DATA_DIR,
+    load_air_quality,
+)
+from src.domain.medioambiente.value_objects import COLUMNAS_FEATURES, COLUMNAS_PROHIBIDAS
+from src.infrastructure.sklearn.medioambiente_preparacion import (
     construir_etiqueta,
     construir_features,
     crear_transformador,
 )
-from src.medioambiente.split import split_aleatorio
+from src.infrastructure.sklearn.medioambiente_split import split_aleatorio
 
 
 def _dataset(n: int = 100) -> pd.DataFrame:
