@@ -37,8 +37,18 @@ class RegistroResponse(BaseModel):
     porcion_g: float
     sintomas: float
     notas: str
+    sintomas_2h: float | None = None
+    fecha_sintomas_2h: datetime | None = None
     score_inflamatorio: float
     score_desinflamatorio: float
+
+
+class Sintomas2HResponse(BaseModel):
+    """Etiqueta real confirmada y momento en que se observó."""
+
+    registro_id: int
+    sintomas: float
+    fecha: datetime
 
 
 class PuntoGasesResponse(BaseModel):

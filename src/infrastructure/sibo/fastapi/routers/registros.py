@@ -16,17 +16,22 @@ from src.adapters.sibo.controllers.controladores import (
 from src.adapters.sibo.controllers.controladores import (
     registrar_comida as registrar_comida_http,
 )
-from src.adapters.sibo.controllers.esquemas import RegistroCreateRequest
-from src.adapters.sibo.presenters.respuestas import RegistroResponse
+from src.adapters.sibo.controllers.controladores import (
+    registrar_sintomas_2h as registrar_sintomas_2h_http,
+)
+from src.adapters.sibo.controllers.esquemas import RegistroCreateRequest, Sintomas2HRequest
+from src.adapters.sibo.presenters.respuestas import RegistroResponse, Sintomas2HResponse
 from src.application.sibo.use_cases.consultar_registros import (
     ConsultarRegistrosUseCase,
     EliminarRegistroUseCase,
 )
 from src.application.sibo.use_cases.registrar_comida import RegistrarComidaUseCase
+from src.application.sibo.use_cases.registrar_sintomas_2h import RegistrarSintomas2HUseCase
 from src.infrastructure.sibo.fastapi.dependencies import (
     get_consultar_registros,
     get_eliminar_registro,
     get_registrar_comida,
+    get_registrar_sintomas_2h,
 )
 
 router = APIRouter(prefix="/registros", tags=["Registros"])
@@ -47,6 +52,15 @@ def listar_registros(
     hasta: Annotated[datetime | None, Query()] = None,
 ) -> list[RegistroResponse]:
     return listar_registros_http(caso_de_uso, desde, hasta)
+
+
+@router.patch("/{registro_id}/sintomas-2h", response_model=Sintomas2HResponse)
+def registrar_sintomas_2h(
+    registro_id: int,
+    request: Sintomas2HRequest,
+    caso_de_uso: Annotated[RegistrarSintomas2HUseCase, Depends(get_registrar_sintomas_2h)],
+) -> Sintomas2HResponse:
+    return registrar_sintomas_2h_http(caso_de_uso, registro_id, request)
 
 
 @router.delete("/{registro_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -33,5 +33,7 @@ class RegistrarComidaResponse(BaseModel):
     porcion_g: float
     sintomas: float
     notas: str
+    sintomas_2h: float | None = None
+    fecha_sintomas_2h: datetime | None = None
     score_inflamatorio: float
     score_desinflamatorio: float

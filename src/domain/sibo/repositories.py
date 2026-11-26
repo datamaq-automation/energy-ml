@@ -24,6 +24,8 @@ class RegistroRepository(Protocol):
 
     def crear(self, registro: RegistroComida) -> RegistroComida: ...
 
+    def obtener(self, registro_id: int) -> RegistroComida | None: ...
+
     def listar(
         self,
         desde: datetime | None = None,
@@ -31,6 +33,13 @@ class RegistroRepository(Protocol):
     ) -> list[RegistroComida]: ...
 
     def eliminar(self, registro_id: int) -> bool: ...
+
+    def registrar_sintomas_2h(
+        self,
+        registro_id: int,
+        sintomas: float,
+        fecha: datetime,
+    ) -> RegistroComida | None: ...
 
 
 class PredictorGases(Protocol):

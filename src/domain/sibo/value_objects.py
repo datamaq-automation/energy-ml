@@ -7,6 +7,10 @@ from dataclasses import dataclass
 FODMAP_VALOR: dict[str, float] = {"bajo": 0.1, "medio": 0.5, "alto": 0.9}
 VENTANA_DIGESTION_HORAS: float = 8.0
 HORA_PICO_HORAS: float = 2.0
+SEGUIMIENTO_MIN_HORAS: float = 1.5
+SEGUIMIENTO_MAX_HORAS: float = 4.0
+MIN_MUESTRAS_REALES: int = 30
+MIN_VALIDACION_REAL: int = 6
 
 
 @dataclass(frozen=True)
@@ -14,8 +18,8 @@ class PoliticaModelo:
     """Mezcla modelo/heurística y percentiles de la banda de gases.
 
     Son reglas del problema, no detalles de sklearn: la infraestructura las recibe.
-    Los valores por defecto son un punto de partida, no una decisión validada con
-    datos reales, y pueden ajustarse sin tocar el modelo.
+    Los pesos solo se aplican si el modelo supera a la heurística en la validación
+    temporal con etiquetas reales; si no, se usa la heurística sola.
     """
 
     peso_modelo: float = 0.7

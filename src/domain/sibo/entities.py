@@ -35,6 +35,8 @@ class RegistroComida:
     sintomas: float = 0.0
     notas: str = ""
     id: int | None = None
+    sintomas_2h: float | None = None
+    fecha_sintomas_2h: datetime | None = None
 
 
 @dataclass(frozen=True)

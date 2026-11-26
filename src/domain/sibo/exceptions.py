@@ -16,7 +16,7 @@ class AlimentoNoEncontradoError(LookupError):
 
 
 class RegistroNoEncontradoError(LookupError):
-    """Se intentó eliminar un registro que no está en el historial."""
+    """Se intentó modificar o eliminar un registro que no está en el historial."""
 
     def __init__(self, registro_id: int) -> None:
         self.registro_id = registro_id

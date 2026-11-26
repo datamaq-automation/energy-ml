@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from src.adapters.sibo.controllers.esquemas import RegistroCreateRequest
+from src.adapters.sibo.controllers.esquemas import RegistroCreateRequest, Sintomas2HRequest
 from src.adapters.sibo.presenters.respuestas import (
     AlimentoResponse,
     RecomendacionResponse,
     RegistroResponse,
     SaludResponse,
     SerieGasesResponse,
+    Sintomas2HResponse,
 )
 from src.application.sibo.dtos.consultar_registros import ConsultarRegistrosRequest
 from src.application.sibo.dtos.eliminar_registro import EliminarRegistroRequest
@@ -18,6 +19,7 @@ from src.application.sibo.dtos.estimar_gases import EstimarGasesRequest
 from src.application.sibo.dtos.listar_alimentos import ListarAlimentosRequest
 from src.application.sibo.dtos.recomendar_alimentos import RecomendarAlimentosRequest
 from src.application.sibo.dtos.registrar_comida import RegistrarComidaRequest
+from src.application.sibo.dtos.registrar_sintomas_2h import RegistrarSintomas2HRequest
 from src.application.sibo.use_cases.consultar_registros import (
     ConsultarRegistrosUseCase,
     EliminarRegistroUseCase,
@@ -26,6 +28,7 @@ from src.application.sibo.use_cases.estimar_gases import EstimarGasesUseCase
 from src.application.sibo.use_cases.listar_alimentos import ListarAlimentosUseCase
 from src.application.sibo.use_cases.recomendar_alimentos import RecomendarAlimentosUseCase
 from src.application.sibo.use_cases.registrar_comida import RegistrarComidaUseCase
+from src.application.sibo.use_cases.registrar_sintomas_2h import RegistrarSintomas2HUseCase
 
 VERSION = "1.0.0"
 
@@ -44,6 +47,19 @@ def registrar_comida(
 ) -> RegistroResponse:
     peticion = RegistrarComidaRequest(**request.model_dump())
     return RegistroResponse(**caso.execute(peticion).model_dump())
+
+
+def registrar_sintomas_2h(
+    caso: RegistrarSintomas2HUseCase,
+    registro_id: int,
+    request: Sintomas2HRequest,
+) -> Sintomas2HResponse:
+    peticion = RegistrarSintomas2HRequest(
+        registro_id=registro_id,
+        sintomas=request.sintomas,
+        fecha=request.fecha,
+    )
+    return Sintomas2HResponse(**caso.execute(peticion).model_dump())
 
 
 def listar_registros(

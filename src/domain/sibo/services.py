@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime
 
-from src.domain.sibo.entities import Alimento
+from src.domain.sibo.entities import Alimento, RegistroComida
 from src.domain.sibo.value_objects import (
     FODMAP_VALOR,
     HORA_PICO_HORAS,
+    SEGUIMIENTO_MAX_HORAS,
+    SEGUIMIENTO_MIN_HORAS,
     VENTANA_DIGESTION_HORAS,
 )
 
@@ -52,6 +55,16 @@ def puntaje_heuristico(
         + 6.0 * hora_normalizada**2
     )
     return min(max(puntaje, 0.0), 100.0)
+
+
+def es_seguimiento_valido(registro: RegistroComida, fecha_sintomas: datetime) -> bool:
+    """Acepta solo etiquetas posteriores a la comida y dentro de la ventana de 2 h."""
+    if registro.sintomas_2h is None:
+        return False
+    if not 0.0 <= registro.sintomas_2h <= 10.0:
+        return False
+    horas = (fecha_sintomas - registro.fecha_hora).total_seconds() / 3600
+    return SEGUIMIENTO_MIN_HORAS <= horas <= SEGUIMIENTO_MAX_HORAS
 
 
 def curva_absorcion(horas: float) -> float:

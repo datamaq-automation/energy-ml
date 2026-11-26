@@ -13,3 +13,8 @@ class RegistroCreateRequest(BaseModel):
     fecha_hora: datetime | None = None
     sintomas: float = Field(default=0.0, ge=0, le=10)
     notas: str = Field(default="", max_length=500)
+
+
+class Sintomas2HRequest(BaseModel):
+    sintomas: float = Field(ge=0, le=10)
+    fecha: datetime | None = None

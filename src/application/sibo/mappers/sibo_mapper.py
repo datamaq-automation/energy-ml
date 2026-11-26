@@ -9,8 +9,13 @@ from src.application.sibo.dtos.estimar_gases import EstimarGasesResponse, PuntoG
 from src.application.sibo.dtos.listar_alimentos import AlimentoDTO
 from src.application.sibo.dtos.recomendar_alimentos import RecomendacionDTO
 from src.application.sibo.dtos.registrar_comida import RegistrarComidaResponse
+from src.application.sibo.dtos.registrar_sintomas_2h import RegistrarSintomas2HResponse
 from src.domain.sibo.entities import Alimento, PuntoGases, Recomendacion, RegistroComida
-from src.domain.sibo.events import ComidaRegistrada, RegistroEliminado
+from src.domain.sibo.events import (
+    ComidaRegistrada,
+    RegistroEliminado,
+    Sintomas2HRegistrados,
+)
 
 
 class SiboMapper:
@@ -53,6 +58,8 @@ class SiboMapper:
             porcion_g=registro.porcion_g,
             sintomas=registro.sintomas,
             notas=registro.notas,
+            sintomas_2h=registro.sintomas_2h,
+            fecha_sintomas_2h=registro.fecha_sintomas_2h,
             score_inflamatorio=alimento.score_inflamatorio,
             score_desinflamatorio=alimento.score_desinflamatorio,
         )
@@ -99,3 +106,12 @@ class SiboMapper:
     def registro_eliminado_a_response(evento: RegistroEliminado) -> EliminarRegistroResponse:
         """Deriva la confirmación de la baja del evento de dominio."""
         return EliminarRegistroResponse(registro_id=evento.registro_id)
+
+    @staticmethod
+    def sintomas_a_response(evento: Sintomas2HRegistrados) -> RegistrarSintomas2HResponse:
+        """Confirma la etiqueta real a partir del evento de seguimiento."""
+        return RegistrarSintomas2HResponse(
+            registro_id=evento.registro_id,
+            sintomas=evento.sintomas,
+            fecha=evento.fecha,
+        )

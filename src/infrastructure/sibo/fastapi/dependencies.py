@@ -18,6 +18,7 @@ from src.application.sibo.use_cases.estimar_gases import EstimarGasesUseCase
 from src.application.sibo.use_cases.listar_alimentos import ListarAlimentosUseCase
 from src.application.sibo.use_cases.recomendar_alimentos import RecomendarAlimentosUseCase
 from src.application.sibo.use_cases.registrar_comida import RegistrarComidaUseCase
+from src.application.sibo.use_cases.registrar_sintomas_2h import RegistrarSintomas2HUseCase
 from src.domain.sibo.repositories import AlimentoRepository, PredictorGases, RegistroRepository
 from src.infrastructure.sibo.database import BaseDatos
 
@@ -60,6 +61,12 @@ def get_registrar_comida(
     registros: Annotated[RegistroRepository, Depends(get_registros)],
 ) -> RegistrarComidaUseCase:
     return RegistrarComidaUseCase(alimentos=alimentos, registros=registros)
+
+
+def get_registrar_sintomas_2h(
+    registros: Annotated[RegistroRepository, Depends(get_registros)],
+) -> RegistrarSintomas2HUseCase:
+    return RegistrarSintomas2HUseCase(registros=registros)
 
 
 def get_consultar_registros(

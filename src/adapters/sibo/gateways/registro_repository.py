@@ -18,8 +18,11 @@ class SqliteRegistroRepository:
     def crear(self, registro: RegistroComida) -> RegistroComida:
         cursor = self._conexion.execute(
             """
-            INSERT INTO registros (fecha_hora, alimento_id, porcion_g, sintomas, notas)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO registros (
+                fecha_hora, alimento_id, porcion_g, sintomas, notas,
+                sintomas_2h, fecha_sintomas_2h
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 registro.fecha_hora.isoformat(timespec="seconds"),
@@ -27,9 +30,19 @@ class SqliteRegistroRepository:
                 registro.porcion_g,
                 registro.sintomas,
                 registro.notas,
+                registro.sintomas_2h,
+                registro.fecha_sintomas_2h.isoformat(timespec="seconds")
+                if registro.fecha_sintomas_2h
+                else None,
             ),
         )
         return replace(registro, id=int(cursor.lastrowid or 0))
+
+    def obtener(self, registro_id: int) -> RegistroComida | None:
+        fila = self._conexion.execute(
+            "SELECT * FROM registros WHERE id = ?", (registro_id,)
+        ).fetchone()
+        return _desde_fila(fila) if fila else None
 
     def listar(
         self,
@@ -55,6 +68,27 @@ class SqliteRegistroRepository:
         cursor = self._conexion.execute("DELETE FROM registros WHERE id = ?", (registro_id,))
         return cursor.rowcount > 0
 
+    def registrar_sintomas_2h(
+        self,
+        registro_id: int,
+        sintomas: float,
+        fecha: datetime,
+    ) -> RegistroComida | None:
+        cursor = self._conexion.execute(
+            """
+            UPDATE registros
+            SET sintomas_2h = ?, fecha_sintomas_2h = ?
+            WHERE id = ?
+            """,
+            (sintomas, fecha.isoformat(timespec="seconds"), registro_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+        fila = self._conexion.execute(
+            "SELECT * FROM registros WHERE id = ?", (registro_id,)
+        ).fetchone()
+        return _desde_fila(fila) if fila else None
+
 
 def _desde_fila(fila: sqlite3.Row) -> RegistroComida:
     return RegistroComida(
@@ -64,4 +98,8 @@ def _desde_fila(fila: sqlite3.Row) -> RegistroComida:
         porcion_g=fila["porcion_g"],
         sintomas=fila["sintomas"],
         notas=fila["notas"],
+        sintomas_2h=fila["sintomas_2h"],
+        fecha_sintomas_2h=(
+            datetime.fromisoformat(fila["fecha_sintomas_2h"]) if fila["fecha_sintomas_2h"] else None
+        ),
     )

@@ -21,3 +21,12 @@ class RegistroEliminado:
     """Un registro de comida salió del historial del usuario."""
 
     registro_id: int
+
+
+@dataclass(frozen=True)
+class Sintomas2HRegistrados:
+    """La persona informó el malestar posterior a una comida."""
+
+    registro_id: int
+    sintomas: float
+    fecha: datetime

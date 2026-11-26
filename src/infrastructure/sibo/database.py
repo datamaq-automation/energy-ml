@@ -30,11 +30,18 @@ CREATE TABLE IF NOT EXISTS registros (
     alimento_id INTEGER NOT NULL REFERENCES alimentos(id),
     porcion_g REAL NOT NULL,
     sintomas REAL NOT NULL DEFAULT 0,
-    notas TEXT NOT NULL DEFAULT ''
+    notas TEXT NOT NULL DEFAULT '',
+    sintomas_2h REAL,
+    fecha_sintomas_2h TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_registros_fecha ON registros(fecha_hora);
 """
+
+MIGRACIONES = {
+    "sintomas_2h": "ALTER TABLE registros ADD COLUMN sintomas_2h REAL",
+    "fecha_sintomas_2h": "ALTER TABLE registros ADD COLUMN fecha_sintomas_2h TEXT",
+}
 
 
 class BaseDatos:
@@ -64,3 +71,7 @@ class BaseDatos:
     def inicializar(self) -> None:
         with self.conexion() as conexion:
             conexion.executescript(ESQUEMA)
+            existentes = {fila["name"] for fila in conexion.execute("PRAGMA table_info(registros)")}
+            for columna, sentencia in MIGRACIONES.items():
+                if columna not in existentes:
+                    conexion.execute(sentencia)
