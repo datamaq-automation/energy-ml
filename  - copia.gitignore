@@ -1,0 +1,49 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Python cachés y compilados
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Base de datos local SQLite
+*.db
+*.sqlite3
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+# Scripts locales de extracción (no versionados)
+tmp/
+
+# Dataset UCI Air Quality (regenerable con src/adapters/medioambiente/gateways/air_quality_uci_gateway.py)
+datos/
+# Resultados del entrenamiento: los genera cada alumno
+data/output/*
+!data/output/.gitkeep
+!data/output/logistica_*.png
+
+# Modelos serializados (joblib)
+data/models/*
+!data/models/.gitkeep
+
+# Cache de mediciones descargadas desde VPS (modo prod)
+data/prod-cache/*
+!data/prod-cache/.gitkeep
+
+# Datos de logística (DataCo Smart Supply Chain Dataset)
+datos/logistica/*.csv
+!datos/logistica/.gitkeep
