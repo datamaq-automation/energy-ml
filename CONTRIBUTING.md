@@ -52,7 +52,7 @@ tu fork / rama de trabajo  ──PR──►  develop  ──(release)──► 
    git checkout -b feat/issue-12-sibo upstream/develop
    ```
 3. **Nombrá la rama** así: `feat/issue-N-tema`, `fix/tema` o `docs/tema`.
-4. **Trabajá en commits chicos** con mensajes claros (`feat(sibo): registro diario de comidas`).
+4. **Trabajá en commits chicos** con mensajes claros y firmados con `-s` (`git commit -s -m "feat(sibo): registro diario de comidas"`). La firma es obligatoria: ver la sección 10.
 5. **Verificá antes de subir** (sección 5).
 6. **Subí tu rama a tu fork** y abrí el PR en GitHub con **base: `develop`**. Revisá que diga `base: develop` antes de crearlo.
 7. **Completá la plantilla del PR** (se carga sola). Incluí `Closes #N` si resolvés un issue completo, o `Refs #N` si es parcial.
@@ -156,6 +156,18 @@ Al revisar un PR miramos:
 
 Esta sección es la base de la evaluación de la participación. Los PRs, los issues y los comentarios son la forma en que evaluamos.
 
-## 10. ¿Dudas?
+## 10. Licencia y Developer Certificate of Origin (DCO)
+
+El código se publica bajo la licencia **GNU Affero General Public License v3.0 o posterior** (`AGPL-3.0-or-later`, ver `LICENSE`). Al contribuir, aceptás que tu aporte se distribuya bajo esa licencia.
+
+No se pide un CLA. Cada commit lleva la línea `Signed-off-by`, que certifica el [Developer Certificate of Origin 1.1](https://developercertificate.org/): que escribiste el cambio, o que tenés derecho a aportarlo, bajo la licencia del proyecto. Se agrega con `git commit -s`, y el nombre y el email tienen que coincidir con los del autor del commit. Un PR con commits sin `Signed-off-by` no se integra.
+
+**Si te olvidaste de firmar:** el último commit se arregla con `git commit --amend -s --no-edit`; varios commits de tu rama, con `git rebase --signoff upstream/develop`. Después subí la rama con `git push --force-with-lease`.
+
+**Los datasets no están cubiertos por esta licencia:** cada uno conserva la suya (ver la sección 7) y se cita con su atribución.
+
+La marca "DataMaq" y su logo no están cubiertos por la licencia: ver `TRADEMARKS.md`. Para reportar una vulnerabilidad, ver `SECURITY.md`.
+
+## 11. ¿Dudas?
 
 Abrí un issue con tu pregunta o comentá en el issue que estás trabajando. Preguntarle a un compañero que ya hizo un aporte también está bien: miralos en los issues y PRs abiertos.

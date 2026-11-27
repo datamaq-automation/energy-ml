@@ -146,3 +146,7 @@ curl http://localhost:8000/api/v1/mediciones/fuente
 Para ver el código en un punto del historial: `git log --oneline` y `git checkout <hash>`.
 
 **Para clase:** los alumnos trabajan con el [cuaderno de trabajo](docs/cuaderno-alumno.md) (también en `/guia` con la app corriendo), con actividades sin respuestas. La [guía docente](docs/guia-docente.md) tiene el detalle técnico, las respuestas verificadas y una secuencia de clases.
+
+## Licencia
+
+El código se publica bajo la licencia **GNU Affero General Public License v3.0 o posterior** (`AGPL-3.0-or-later`, ver [`LICENSE`](LICENSE)). Los aportes se certifican con el DCO (`git commit -s`, ver [`CONTRIBUTING.md`](CONTRIBUTING.md) §10). Los datasets conservan su propia licencia. La marca DataMaq no está incluida: ver [`TRADEMARKS.md`](TRADEMARKS.md).

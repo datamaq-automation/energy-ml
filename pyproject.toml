@@ -4,6 +4,8 @@ version = "1.0.0"
 description = "Identificador de cargas energéticas (NILM) — evolución didáctica de DiabetesAI-ML"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.31.0",
