@@ -1,0 +1,9 @@
+# .env.example — Plantilla de SECRETOS (claves, tokens, contraseñas).
+#
+# La configuración que no es secreta (puertos, umbrales NILM, carpetas, logging) vive con sus
+# valores por defecto en src/infrastructure/settings/config.py. No la repitas acá.
+#
+# Hoy el proyecto no usa secretos, así que no hace falta crear .env. Si algún día se agrega uno:
+#   1. declararlo en Settings sin valor por defecto (ej. API_KEY: str)
+#   2. agregarlo acá con un valor ficticio (ej. API_KEY=cambiar-por-la-clave-real)
+#   3. copiar este archivo a .env (ignorado por git) y completar el valor real
