@@ -12,29 +12,33 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from educacion.fail_risk import (
-    CLUSTER_FEATURES,
+from src.adapters.educacion.gateways.estudiantes_csv import (
     DATA_PATH,
-    FAIL_THRESHOLD,
-    K_MAX,
-    K_MIN,
-    SEED,
-    choose_k,
-    compute_k_metrics,
+    EstudiantesCsv,
+    load_students,
+)
+from src.application.educacion.preparacion import select_cluster_features
+from src.application.educacion.tareas import (
     describe_groups,
     failing_rates_by_group,
-    fit_kmeans,
-    load_students,
-    plot_elbow_silhouette,
     run_task_a,
+)
+from src.domain.educacion.modelos import CLUSTER_FEATURES, FAIL_THRESHOLD, K_MAX, K_MIN, SEED
+from src.domain.educacion.reglas import choose_k
+from src.infrastructure.graficos.educacion import MatplotlibGraficador, plot_elbow_silhouette
+from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.educacion_agrupador import (
+    KMeansAgrupadorEstudiantes,
+    compute_k_metrics,
+    fit_kmeans,
     scale_features,
-    select_cluster_features,
 )
 
 matplotlib.use("Agg", force=True)
 
 RAIZ = Path(__file__).resolve().parents[2]
-MODULO = RAIZ / "educacion" / "fail_risk.py"
+GATEWAY = RAIZ / "src" / "adapters" / "educacion" / "gateways" / "estudiantes_csv.py"
+MODELOS = RAIZ / "src" / "domain" / "educacion" / "modelos.py"
 
 
 @pytest.fixture(scope="module")
@@ -278,15 +282,21 @@ def test_plot_elbow_shows_without_saving(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_run_task_a_prints_full_report(
-    capsys: pytest.CaptureFixture[str],
+    caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     shown: list[int] = []
     monkeypatch.setattr(plt, "show", lambda: shown.append(1))
 
-    result = run_task_a()
+    with caplog.at_level("INFO", logger="backend-api"):
+        result = run_task_a(
+            EstudiantesCsv(),
+            KMeansAgrupadorEstudiantes(),
+            MatplotlibGraficador(),
+            logger,
+        )
 
-    out = capsys.readouterr().out
+    out = caplog.text
     assert "Tarea A" in out
     assert "Variables de agrupamiento" in out
     assert "silueta" in out
@@ -307,13 +317,13 @@ def test_run_task_a_prints_full_report(
 
 
 def test_source_has_no_absolute_paths() -> None:
-    source = MODULO.read_text(encoding="utf-8")
+    source = GATEWAY.read_text(encoding="utf-8")
     assert not re.search(r"[A-Za-z]:[\\/]", source), "rutas absolutas prohibidas (regla 8)"
     assert "/home/" not in source
     assert "__file__" in source, "DATA_PATH debe derivarse de __file__"
 
 
 def test_source_declares_seed_and_data_path_constants() -> None:
-    source = MODULO.read_text(encoding="utf-8")
-    assert "SEED = 42" in source
-    assert "datos" in source and "educacion" in source and "student-mat.csv" in source
+    assert "SEED = 42" in MODELOS.read_text(encoding="utf-8")
+    gateways = GATEWAY.read_text(encoding="utf-8")
+    assert "datos" in gateways and "educacion" in gateways and "student-mat.csv" in gateways

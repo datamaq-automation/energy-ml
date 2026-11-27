@@ -9,20 +9,29 @@ import pandas as pd
 import pytest
 from sklearn.pipeline import Pipeline
 
-from educacion.fail_risk import (
+from src.adapters.educacion.gateways.estudiantes_csv import (
+    EstudiantesCsv,
+    load_students,
+)
+from src.application.educacion.evaluacion import (
+    analyze_fairness,
+    evaluate_predictions,
+    pick_best_model,
+    subgroup_metrics,
+)
+from src.application.educacion.preparacion import split_train_test
+from src.application.educacion.tareas import run_task_c
+from src.domain.educacion.modelos import (
     FAIRNESS_GAP_THRESHOLD,
     MIN_SUBGROUP_N,
     MODEL_FEATURES,
     RECOMMENDATION,
     SUBGROUP_COLUMNS,
-    analyze_fairness,
-    evaluate_predictions,
+)
+from src.infrastructure.settings.logger import logger
+from src.infrastructure.sklearn.educacion_modelos import (
+    SklearnEntrenadorRiesgo,
     fit_real_models,
-    load_students,
-    pick_best_model,
-    run_task_c,
-    split_train_test,
-    subgroup_metrics,
 )
 
 
@@ -43,10 +52,12 @@ def task_c(students: pd.DataFrame) -> SimpleNamespace:
     best = pick_best_model(metrics)
     predictions = models[best].predict(x_test)
     fairness = {
-        column: subgroup_metrics(y_test, predictions, x_test[column]) for column in SUBGROUP_COLUMNS
+        column: subgroup_metrics(y_test, predictions, students.loc[x_test.index, column])
+        for column in SUBGROUP_COLUMNS
     }
     return SimpleNamespace(
         x_test=x_test,
+        groups=students.loc[x_test.index],
         y_test=y_test,
         models=models,
         metrics=metrics,
@@ -96,7 +107,7 @@ def test_subgroup_metrics_are_aggregates_only(task_c: SimpleNamespace) -> None:
 def test_subgroup_metrics_match_manual_computation(task_c: SimpleNamespace) -> None:
     for column, table in task_c.fairness.items():
         for _, row in table.iterrows():
-            mask = task_c.x_test[column].to_numpy() == row["group"]
+            mask = task_c.groups[column].to_numpy() == row["group"]
             precision, recall, _, _ = precision_recall_fscore_support_for(
                 task_c.y_test.to_numpy()[mask],
                 task_c.predictions[mask],
@@ -151,13 +162,29 @@ def test_analyze_fairness_flags_relevant_gap_with_causes() -> None:
             "recall": [0.8, 0.3],
         }
     )
-    info = analyze_fairness({"sex": table})["sex"]
+    info = analyze_fairness({"goout": table})["goout"]
     assert info["relevant"] is True
     assert float(info["recall_gap"]) == pytest.approx(0.5)
     assert float(info["precision_gap"]) == pytest.approx(0.4)
     assert any("desbalanceada" in cause for cause in info["causes"])
     assert any("proxy" in cause for cause in info["causes"])
     assert info["small_groups"] == []
+
+
+def test_analyze_fairness_skips_proxy_cause_for_subgroup_only_columns() -> None:
+    """sex/school ya no son predictores: la causa 'proxy' no aplica aunque haya brecha."""
+    table = pd.DataFrame(
+        {
+            "group": ["F", "M"],
+            "n": [40, 40],
+            "n_desaprobados": [8, 16],
+            "precision": [0.9, 0.5],
+            "recall": [0.8, 0.3],
+        }
+    )
+    info = analyze_fairness({"sex": table})["sex"]
+    assert info["relevant"] is True
+    assert not any("proxy" in cause for cause in info["causes"])
 
 
 def test_analyze_fairness_accepts_small_gap_without_causes() -> None:
@@ -211,10 +238,12 @@ def test_analyze_fairness_respects_custom_threshold() -> None:
 # ------------------------------------------------------------------------------
 
 
-def test_sex_and_school_are_model_predictors() -> None:
-    """Premisa de la causa 'proxy': el modelo usa estas variables como entradas."""
-    assert "sex" in MODEL_FEATURES
-    assert "school" in MODEL_FEATURES
+def test_sex_and_school_are_subgroups_not_predictors() -> None:
+    """Decisión del PR: sex/school NO son predictores; solo se auditan como subgrupo."""
+    assert "sex" not in MODEL_FEATURES
+    assert "school" not in MODEL_FEATURES
+    assert "sex" in SUBGROUP_COLUMNS
+    assert "school" in SUBGROUP_COLUMNS
 
 
 def test_task_c_constants() -> None:
@@ -264,9 +293,10 @@ def test_recommendation_is_safety_first() -> None:
 # ------------------------------------------------------------------------------
 
 
-def test_run_task_c_prints_full_report(capsys: pytest.CaptureFixture[str]) -> None:
-    result = run_task_c()
-    out = capsys.readouterr().out
+def test_run_task_c_prints_full_report(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level("INFO", logger="backend-api"):
+        result = run_task_c(EstudiantesCsv(), SklearnEntrenadorRiesgo(), logger)
+    out = caplog.text
 
     assert "Tarea C" in out
     assert "Modelo evaluado: logistic_regression" in out
@@ -276,7 +306,7 @@ def test_run_task_c_prints_full_report(capsys: pytest.CaptureFixture[str]) -> No
     assert "Brechas (diferencia relevante desde 10%)" in out
     assert "RELEVANTE" in out
     assert "causa posible" in out
-    assert "proxy" in out
+    assert "desbalanceada" in out
     assert "Recomendación de uso (Tarea C.3)" in out
     assert "el modelo sirve para acompañar, no para sancionar" in out
     assert "NO: usar el resultado para decisiones administrativas" in out
@@ -290,8 +320,12 @@ def test_run_task_c_prints_full_report(capsys: pytest.CaptureFixture[str]) -> No
         assert set(info) == {"recall_gap", "precision_gap", "relevant", "small_groups", "causes"}
 
 
-def test_run_task_c_is_consistent_with_task_b(task_c: SimpleNamespace) -> None:
-    result = run_task_c()
+def test_run_task_c_is_consistent_with_task_b(
+    task_c: SimpleNamespace,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level("INFO", logger="backend-api"):
+        result = run_task_c(EstudiantesCsv(), SklearnEntrenadorRiesgo(), logger)
     assert result["best_model"] == task_c.best
     for column in SUBGROUP_COLUMNS:
         pd.testing.assert_frame_equal(result["fairness"][column], task_c.fairness[column])
