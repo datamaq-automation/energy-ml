@@ -31,6 +31,7 @@
 - [ ] Las librerías nuevas están en `requirements.txt` y `pyproject.toml`
 - [ ] No subí datasets pesados, datos personales ni credenciales
 - [ ] La base de este PR es `develop`
+- [ ] Todos mis commits tienen `Signed-off-by` (`git commit -s`, ver `CONTRIBUTING.md` §10)
 
 ## Checklist de ML
 
